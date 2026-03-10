@@ -1,77 +1,106 @@
 """
-Solar ERP — Authentication Utilities
-JWT token creation and password hashing.
+Solar ERP — Authentication Utilities (Firebase Auth + Multi-tenant)
+Verifies Firebase ID tokens and manages users/companies.
 """
 
-from datetime import datetime, timedelta
-from typing import Optional
-
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import os
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+import firebase_admin
+from firebase_admin import auth, credentials
 
-from app.config import get_settings
 from app.database import get_db
 from app.models.user import User
+from app.models.company import Company
 
-settings = get_settings()
+# Initialize Firebase Admin if not already initialized
+if not firebase_admin._apps:
+    # Use default credentials or environment variables if needed
+    # For now, default app init assumes credentials are set via GOOGLE_APPLICATION_CREDENTIALS
+    # Or in development, it might work without it if we mock or just initialize an empty app.
+    # To properly use it, we usually do:
+    # cred = credentials.Certificate('path/to/my/firebase.json')
+    # firebase_admin.initialize_app(cred)
+    # But since we're using default, we try to init:
+    try:
+        firebase_admin.initialize_app()
+    except ValueError:
+        pass # Already initialized
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token."""
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
-
+security = HTTPBearer()
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """FastAPI dependency: extract and validate user from JWT token."""
+    """FastAPI dependency: validate Firebase token and fetch/create User and Company."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        # Verify Firebase Token
+        decoded_token = auth.verify_id_token(token.credentials)
+        firebase_uid = decoded_token.get("uid")
+        email = decoded_token.get("email")
+        name = decoded_token.get("name", email.split('@')[0])
+        
+        if not firebase_uid or not email:
             raise credentials_exception
-    except JWTError:
+            
+    except Exception as e:
+        print(f"Auth error: {e}")
         raise credentials_exception
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    # Try to find the user in our DB
+    # We include 'company' so we can access current_user.company later
+    result = await db.execute(select(User).options(selectinload(User.company)).where(User.firebase_uid == firebase_uid))
     user = result.scalar_one_or_none()
-    if user is None:
-        raise credentials_exception
+    
+    if not user:
+        # First time login... Option A: Create a demo company automatically
+        new_company = Company(
+            name=f"Demo de {name}",
+            plan="demo"
+        )
+        db.add(new_company)
+        await db.flush() # flush to get company ID
+
+        user = User(
+            firebase_uid=firebase_uid,
+            email=email,
+            full_name=name,
+            company_id=new_company.id,
+            role="admin" # Admin of their own demo company
+        )
+        db.add(user)
+        # Re-attach the company manually due to the flush
+        user.company = new_company
+        await db.commit()
+        await db.refresh(user)
+    
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    return user
+        
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "company_id": user.company_id,
+        "company_name": user.company.name if user.company else None,
+        "plan": user.company.plan if user.company else None,
+    }
 
 
 def require_role(*roles: str):
     """Dependency factory: require user to have one of the specified roles."""
     async def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles:
+        if current_user["role"] not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",

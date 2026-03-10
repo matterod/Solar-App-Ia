@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { agent } from "@/services/api";
 
 interface Message {
     id: string;
@@ -10,8 +12,6 @@ interface Message {
     timestamp: Date;
     toolCalls?: Array<{ tool: string; input: Record<string, unknown> }>;
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const suggestions = [
     "¿Cuántas instalaciones hay?",
@@ -23,20 +23,75 @@ const suggestions = [
 ];
 
 export default function AssistantPage() {
+    const { user, dbUser, logout } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
-    const [token, setToken] = useState<string | null>(null);
-    const [showLogin, setShowLogin] = useState(true);
-    const [loginEmail, setLoginEmail] = useState("");
-    const [loginPassword, setLoginPassword] = useState("");
-    const [loginError, setLoginError] = useState("");
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Speech Recognition State
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    useEffect(() => {
+        // Initialize Web Speech API
+        if (typeof window !== "undefined" && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = false;
+            recognitionRef.current.interimResults = true;
+            recognitionRef.current.lang = 'es-AR'; // Español Argentina
+
+            recognitionRef.current.onresult = (event: any) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                // Si hay texto final, lo sumamos al input actual
+                if (finalTranscript) {
+                    setInput((prev) => prev + " " + finalTranscript);
+                }
+            };
+
+            recognitionRef.current.onerror = (event: any) => {
+                console.error("Speech recognition error", event.error);
+                setIsListening(false);
+            };
+
+            recognitionRef.current.onend = () => {
+                setIsListening(false);
+            };
+        }
+    }, []);
+
+    const toggleListening = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+            setIsListening(false);
+        } else {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.start();
+                    setIsListening(true);
+                } catch (e) {
+                    console.error(e);
+                }
+            } else {
+                alert("Tu navegador no soporta reconocimiento de voz nativo.");
+            }
+        }
+    };
 
     // Load conversation history from session storage on mount
     useEffect(() => {
@@ -73,74 +128,8 @@ export default function AssistantPage() {
         }
     }, [messages]);
 
-    // Check for saved token
-    useEffect(() => {
-        const saved = localStorage.getItem("solar_token");
-        if (saved) {
-            setToken(saved);
-            setShowLogin(false);
-        }
-    }, []);
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoggingIn(true);
-        setLoginError("");
-
-        try {
-            const res = await fetch(`${API_URL}/api/v1/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `username=${encodeURIComponent(loginEmail)}&password=${encodeURIComponent(loginPassword)}`,
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || "Login incorrecto");
-            }
-
-            const data = await res.json();
-            setToken(data.access_token);
-            localStorage.setItem("solar_token", data.access_token);
-            setShowLogin(false);
-        } catch (err) {
-            setLoginError(err instanceof Error ? err.message : "Error de conexión");
-        } finally {
-            setIsLoggingIn(false);
-        }
-    };
-
-    const handleRegister = async () => {
-        setIsLoggingIn(true);
-        setLoginError("");
-
-        try {
-            const res = await fetch(`${API_URL}/api/v1/auth/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: loginEmail,
-                    password: loginPassword,
-                    full_name: "Admin",
-                    role: "admin",
-                }),
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || "Error al registrar");
-            }
-
-            // Auto-login after register
-            await handleLogin(new Event("submit") as unknown as React.FormEvent);
-        } catch (err) {
-            setLoginError(err instanceof Error ? err.message : "Error al registrar");
-            setIsLoggingIn(false);
-        }
-    };
-
     const sendMessage = async (text: string) => {
-        if (!text.trim() || !token) return;
+        if (!text.trim() || !user) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -148,36 +137,13 @@ export default function AssistantPage() {
             content: text,
             timestamp: new Date(),
         };
+        const currentHistory = messages.map(m => ({ role: m.role, content: m.content }));
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
         setIsTyping(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/v1/agent/chat`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    message: text,
-                    history: messages.map(m => ({ role: m.role, content: m.content }))
-                }),
-            });
-
-            if (res.status === 401) {
-                setToken(null);
-                localStorage.removeItem("solar_token");
-                setShowLogin(true);
-                setIsTyping(false);
-                return;
-            }
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.detail || "Error del servidor");
-            }
+            const data = await agent.chat(text, currentHistory);
 
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
@@ -191,7 +157,7 @@ export default function AssistantPage() {
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: `❌ Error: ${err instanceof Error ? err.message : "No se pudo conectar al servidor"}.\n\nVerificá que:\n1. El backend esté corriendo (\`docker compose up\`)\n2. La API key de Anthropic esté configurada en \`.env\``,
+                content: `❌ Error: ${err instanceof Error ? err.message : "No se pudo conectar al servidor"}.\n\nVerificá que el backend esté corriendo correctamente.`,
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, errorMessage]);
@@ -200,66 +166,7 @@ export default function AssistantPage() {
         }
     };
 
-    // ── Login Screen ──
-    if (showLogin) {
-        return (
-            <div className="flex items-center justify-center h-[calc(100vh-0px)] p-6">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-sm"
-                >
-                    <div className="text-center mb-6">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-lg shadow-sky-500/20 mx-auto mb-3">
-                            <span className="text-2xl">☀️</span>
-                        </div>
-                        <h2 className="text-xl font-bold text-slate-900">Iniciar Sesión</h2>
-                        <p className="text-sm text-slate-500 mt-1">Conectate a Sol para comenzar</p>
-                    </div>
 
-                    <form onSubmit={handleLogin} className="space-y-3">
-                        <input
-                            type="email"
-                            value={loginEmail}
-                            onChange={(e) => setLoginEmail(e.target.value)}
-                            placeholder="Email"
-                            required
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-300"
-                        />
-                        <input
-                            type="password"
-                            value={loginPassword}
-                            onChange={(e) => setLoginPassword(e.target.value)}
-                            placeholder="Contraseña"
-                            required
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-300"
-                        />
-
-                        {loginError && (
-                            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{loginError}</p>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={isLoggingIn}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-medium shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-sky-500 disabled:opacity-50 transition-all"
-                        >
-                            {isLoggingIn ? "Conectando..." : "Iniciar Sesión"}
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={handleRegister}
-                            disabled={isLoggingIn || !loginEmail || !loginPassword}
-                            className="w-full py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 transition-all"
-                        >
-                            Crear Cuenta Nueva
-                        </button>
-                    </form>
-                </motion.div>
-            </div>
-        );
-    }
 
     // ── Chat Screen ──
     return (
@@ -295,11 +202,7 @@ export default function AssistantPage() {
                             Nueva Conversación
                         </button>
                         <button
-                            onClick={() => {
-                                setToken(null);
-                                localStorage.removeItem("solar_token");
-                                setShowLogin(true);
-                            }}
+                            onClick={logout}
                             className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
                         >
                             Cerrar Sesión
@@ -401,9 +304,24 @@ export default function AssistantPage() {
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Escribe tu mensaje a Sol..."
-                        className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-300 transition-all"
+                        placeholder={isListening ? "Escuchando... Hablá ahora" : "Escribe tu mensaje a Sol..."}
+                        className={`flex-1 px-4 py-3 rounded-xl border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${isListening
+                            ? "bg-red-50 border-red-200 focus:border-red-300"
+                            : "bg-slate-50 border-slate-200 focus:border-sky-300"
+                            }`}
                     />
+                    <button
+                        type="button"
+                        onClick={toggleListening}
+                        className={`px-4 py-3 rounded-xl border text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center
+                            ${isListening ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200'}
+                        `}
+                        title="Dictar por voz"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                        </svg>
+                    </button>
                     <button
                         type="submit"
                         disabled={!input.trim() || isTyping}

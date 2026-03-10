@@ -24,7 +24,7 @@ async def list_movements(
     current_user: User = Depends(get_current_user),
 ):
     """List stock movements."""
-    query = select(StockMovement).offset(skip).limit(limit).order_by(StockMovement.created_at.desc())
+    query = select(StockMovement).where(StockMovement.company_id == current_user["company_id"]).offset(skip).limit(limit).order_by(StockMovement.created_at.desc())
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -37,7 +37,7 @@ async def create_movement(
 ):
     """Record a stock movement and update product stock."""
     # Validate product exists
-    result = await db.execute(select(Product).where(Product.id == data.product_id))
+    result = await db.execute(select(Product).where(Product.company_id == current_user["company_id"]).where(Product.id == data.product_id))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -52,7 +52,7 @@ async def create_movement(
     else:
         raise HTTPException(status_code=400, detail="Invalid movement type")
 
-    movement = StockMovement(**data.model_dump(), created_by=current_user.id)
+    movement = StockMovement(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user.id)
     db.add(movement)
     await db.flush()
     await db.refresh(movement)

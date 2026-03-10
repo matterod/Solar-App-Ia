@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { problems, Problem, Solution } from "@/services/api";
 
@@ -19,6 +19,83 @@ export default function ProblemsPage() {
     const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
     const [solutionText, setSolutionText] = useState("");
     const [savingSolution, setSavingSolution] = useState(false);
+
+    // Speech Recognition State
+    const [isListeningSearch, setIsListeningSearch] = useState(false);
+    const recognitionSearchRef = useRef<any>(null);
+
+    const [isListeningCreate, setIsListeningCreate] = useState(false);
+    const recognitionCreateRef = useRef<any>(null);
+
+    const [isListeningSolution, setIsListeningSolution] = useState(false);
+    const recognitionSolutionRef = useRef<any>(null);
+
+    // Initialize Speech Recognition
+    useEffect(() => {
+        if (typeof window !== "undefined" && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+            // Search transcriber
+            recognitionSearchRef.current = new SpeechRecognition();
+            recognitionSearchRef.current.continuous = false;
+            recognitionSearchRef.current.interimResults = true;
+            recognitionSearchRef.current.lang = 'es-AR';
+            recognitionSearchRef.current.onresult = (e: any) => {
+                let final = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                }
+                if (final) setSearch(prev => prev + " " + final);
+            };
+            recognitionSearchRef.current.onend = () => setIsListeningSearch(false);
+            recognitionSearchRef.current.onerror = () => setIsListeningSearch(false);
+
+            // Create Problem transcriber
+            recognitionCreateRef.current = new SpeechRecognition();
+            recognitionCreateRef.current.continuous = false;
+            recognitionCreateRef.current.interimResults = true;
+            recognitionCreateRef.current.lang = 'es-AR';
+            recognitionCreateRef.current.onresult = (e: any) => {
+                let final = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                }
+                if (final) setForm(f => ({ ...f, description: f.description + " " + final }));
+            };
+            recognitionCreateRef.current.onend = () => setIsListeningCreate(false);
+            recognitionCreateRef.current.onerror = () => setIsListeningCreate(false);
+
+            // Solution transcriber
+            recognitionSolutionRef.current = new SpeechRecognition();
+            recognitionSolutionRef.current.continuous = false;
+            recognitionSolutionRef.current.interimResults = true;
+            recognitionSolutionRef.current.lang = 'es-AR';
+            recognitionSolutionRef.current.onresult = (e: any) => {
+                let final = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                }
+                if (final) setSolutionText(prev => prev + " " + final);
+            };
+            recognitionSolutionRef.current.onend = () => setIsListeningSolution(false);
+            recognitionSolutionRef.current.onerror = () => setIsListeningSolution(false);
+        }
+    }, []);
+
+    const toggleListen = (type: 'search' | 'create' | 'solution') => {
+        try {
+            if (type === 'search') {
+                if (isListeningSearch) { recognitionSearchRef.current?.stop(); setIsListeningSearch(false); }
+                else { recognitionSearchRef.current?.start(); setIsListeningSearch(true); }
+            } else if (type === 'create') {
+                if (isListeningCreate) { recognitionCreateRef.current?.stop(); setIsListeningCreate(false); }
+                else { recognitionCreateRef.current?.start(); setIsListeningCreate(true); }
+            } else if (type === 'solution') {
+                if (isListeningSolution) { recognitionSolutionRef.current?.stop(); setIsListeningSolution(false); }
+                else { recognitionSolutionRef.current?.start(); setIsListeningSolution(true); }
+            }
+        } catch (e) { console.error(e) }
+    };
 
     const load = () => {
         setLoading(true);
@@ -72,8 +149,15 @@ export default function ProblemsPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en problemas o soluciones..."
-                    className="w-full sm:w-72 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-300" />
+                <div className="flex flex-1 sm:w-72 gap-2">
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en problemas o soluciones..."
+                        className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-300" />
+                    <button type="button" onClick={() => toggleListen('search')} className={`px-3 rounded-xl border flex items-center justify-center transition-colors ${isListeningSearch ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                        </svg>
+                    </button>
+                </div>
 
                 <select
                     value={filterStatus}
@@ -171,7 +255,14 @@ export default function ProblemsPage() {
                                         <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Ej: Falla de inversor Huawei en sombra..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Descripción detallada *</label>
+                                        <div className="flex justify-between items-end mb-1">
+                                            <label className="block text-sm font-medium text-slate-700">Descripción detallada *</label>
+                                            <button type="button" onClick={() => toggleListen('create')} className={`p-1.5 rounded-lg border transition-colors ${isListeningCreate ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                         <textarea required rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Explicá cómo se presentó el problema, qué síntomas tenía, qué viste..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none" />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-4">
@@ -201,9 +292,16 @@ export default function ProblemsPage() {
                                 </div>
                                 <form onSubmit={handleAddSolution} className="p-6 space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            ¿Cómo lograste solucionar este problema? *
-                                        </label>
+                                        <div className="flex justify-between items-end mb-2">
+                                            <label className="block text-sm font-medium text-slate-700">
+                                                ¿Cómo lograste solucionar este problema? *
+                                            </label>
+                                            <button type="button" onClick={() => toggleListen('solution')} className={`p-1.5 rounded-lg border transition-colors ${isListeningSolution ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 1-3-3V4.5a3 3 0 1 1 6 0v8.25a3 3 0 0 1-3 3Z" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                         <textarea required rows={5} value={solutionText} onChange={(e) => setSolutionText(e.target.value)} placeholder="Ej: Resulta que el panel estaba haciendo tierra con la estructura. Lo que hicimos fue..." className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 shadow-inner resize-none bg-slate-50 focus:bg-white transition-colors" />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-2">

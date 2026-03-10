@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 
 export default function DashboardLayout({
@@ -10,18 +11,21 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
-    const [isAuth, setIsAuth] = useState(false);
+    const { user, loading } = useAuth();
 
     useEffect(() => {
-        const token = localStorage.getItem("solar_token");
-        if (!token) {
+        if (!loading && !user) {
             router.push("/");
-        } else {
-            setIsAuth(true);
         }
-    }, [router]);
+    }, [user, loading, router]);
 
-    if (!isAuth) return null; // flash prevention
+    if (loading || !user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen">

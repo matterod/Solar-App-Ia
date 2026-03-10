@@ -1,25 +1,27 @@
-"""User model."""
-
-import uuid
-from datetime import datetime
-
-from sqlalchemy import Boolean, DateTime, Enum, String
+from sqlalchemy import Column, String, Boolean, DateTime, func, Integer, ForeignKey, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy.orm import relationship
+import uuid
 from app.database import Base
 
+user_role_enum = SQLEnum('admin', 'manager', 'technician', 'client', name='user_role', create_type=False)
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(Enum("admin", "partner", "technician", name="user_role", create_type=False), nullable=False, default="technician")
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    phone: Mapped[str | None] = mapped_column(String(50))
-    avatar_url: Mapped[str | None] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    firebase_uid = Column(String(128), unique=True, nullable=False)
+    email = Column(String(255), unique=True, nullable=False)
+    full_name = Column(String(255), nullable=False)
+    role = Column(user_role_enum, default="technician", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    phone = Column(String(50))
+    avatar_url = Column(String)
+    message_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    company = relationship("Company", back_populates="users")
+    installations = relationship("Installation", back_populates="assigned_technician", foreign_keys="[Installation.assigned_to]")
+    created_installations = relationship("Installation", back_populates="creator", foreign_keys="[Installation.created_by]")

@@ -1,40 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { auth } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
   const router = useRouter();
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const { user, loginWithGoogle } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("solar_token");
-    if (token) router.push("/dashboard");
-  }, [router]);
+    if (user) router.push("/dashboard");
+  }, [user, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
-
     try {
-      if (isLogin) {
-        await auth.login(email, password);
-      } else {
-        await auth.register(email, password, fullName);
-        await auth.login(email, password);
-      }
-      router.push("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado");
-    } finally {
+      await loginWithGoogle();
+      // user stat is updated in AuthContext, useEffect redirects
+    } catch (err: any) {
+      setError(err?.message || "Error al iniciar sesión con Google");
       setLoading(false);
     }
   };
@@ -95,41 +83,13 @@ export default function HomePage() {
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 mb-1">
-            {isLogin ? "Bienvenido" : "Crear Cuenta"}
+            Bienvenido
           </h2>
           <p className="text-sm text-slate-500 mb-6">
-            {isLogin ? "Iniciá sesión para continuar" : "Registrate para empezar"}
+            Iniciá sesión para continuar
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nombre completo"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all"
-              />
-            )}
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all"
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Contraseña"
-              required
-              minLength={6}
-              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all"
-            />
-
+          <div className="space-y-4">
             {error && (
               <motion.p
                 initial={{ opacity: 0, y: -5 }}
@@ -141,23 +101,14 @@ export default function HomePage() {
             )}
 
             <button
-              type="submit"
+              onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-semibold shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-sky-500 disabled:opacity-50 transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0"
+              className="w-full flex tracking-wide items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold shadow-sm hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all"
             >
-              {loading ? "Procesando..." : isLogin ? "Iniciar Sesión" : "Crear Cuenta"}
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" className="w-5 h-5" />
+              {loading ? "Iniciando..." : "Ingresar con Google"}
             </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
-            {isLogin ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?"}{" "}
-            <button
-              onClick={() => { setIsLogin(!isLogin); setError(""); }}
-              className="text-sky-600 font-medium hover:text-sky-500 transition-colors"
-            >
-              {isLogin ? "Registrate" : "Iniciá sesión"}
-            </button>
-          </p>
+          </div>
         </motion.div>
       </div>
     </div>

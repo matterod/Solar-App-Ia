@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.pending_task import PendingTask
 from app.models.user import User
 from app.schemas.pending_task import PendingTaskCreate, PendingTaskRead, PendingTaskUpdate
+from app.models.installation import Installation
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
@@ -27,7 +28,13 @@ async def list_tasks(
     current_user: User = Depends(get_current_user),
 ):
     """List pending tasks with filters."""
-    query = select(PendingTask).offset(skip).limit(limit).order_by(PendingTask.created_at.desc())
+    query = (
+        select(PendingTask)
+        .join(Installation, PendingTask.installation_id == Installation.id)
+        .where(
+            Installation.company_id == current_user["company_id"]
+        )
+    )
     if status:
         query = query.where(PendingTask.status == status)
     if priority:
@@ -60,7 +67,15 @@ async def update_task(
     current_user: User = Depends(get_current_user),
 ):
     """Update a pending task."""
-    result = await db.execute(select(PendingTask).where(PendingTask.id == task_id))
+    result = await db.execute(
+        select(PendingTask)
+        .join(Installation, PendingTask.installation_id == Installation.id)
+        .where(
+            PendingTask.id == task_id,
+            Installation.company_id == current_user["company_id"]
+        )
+    )
+
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")

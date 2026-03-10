@@ -27,7 +27,7 @@ async def list_products(
     current_user: User = Depends(get_current_user),
 ):
     """List products with filters."""
-    query = select(Product).where(Product.is_active == True).offset(skip).limit(limit).order_by(Product.name)
+    query = select(Product).where(Product.company_id == current_user["company_id"]).where(Product.is_active == True).offset(skip).limit(limit).order_by(Product.name)
     if category:
         query = query.where(Product.category == category)
     if search:
@@ -45,7 +45,7 @@ async def create_product(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new product."""
-    product = Product(**data.model_dump())
+    product = Product(company_id=current_user["company_id"], **data.model_dump())
     db.add(product)
     await db.flush()
     await db.refresh(product)
@@ -60,7 +60,7 @@ async def update_product(
     current_user: User = Depends(get_current_user),
 ):
     """Update a product."""
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(select(Product).where(Product.company_id == current_user["company_id"]).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

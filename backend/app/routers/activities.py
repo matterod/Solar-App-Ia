@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.activity import Activity
+from app.models.installation import Installation
 from app.models.user import User
 from app.schemas.activity import ActivityCreate, ActivityRead
 
@@ -25,7 +26,14 @@ async def list_activities(
     current_user: User = Depends(get_current_user),
 ):
     """List activities, optionally filtered by installation."""
-    query = select(Activity).offset(skip).limit(limit).order_by(Activity.activity_date.desc())
+    query = (
+        select(Activity)
+        .join(Installation, Activity.installation_id == Installation.id)
+        .where(Installation.company_id == current_user["company_id"])
+        .offset(skip)
+        .limit(limit)
+        .order_by(Activity.activity_date.desc())
+    )
     if installation_id:
         query = query.where(Activity.installation_id == installation_id)
     result = await db.execute(query)

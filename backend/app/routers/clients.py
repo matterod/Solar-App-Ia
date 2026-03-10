@@ -25,7 +25,7 @@ async def list_clients(
     current_user: User = Depends(get_current_user),
 ):
     """List all clients with optional search."""
-    query = select(Client).offset(skip).limit(limit).order_by(Client.name)
+    query = select(Client).where(Client.company_id == current_user["company_id"]).offset(skip).limit(limit).order_by(Client.name)
     if search:
         query = query.where(Client.name.ilike(f"%{search}%"))
     result = await db.execute(query)
@@ -39,7 +39,7 @@ async def get_client(
     current_user: User = Depends(get_current_user),
 ):
     """Get a single client by ID."""
-    result = await db.execute(select(Client).where(Client.id == client_id))
+    result = await db.execute(select(Client).where(Client.company_id == current_user["company_id"]).where(Client.id == client_id))
     client = result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -53,7 +53,7 @@ async def create_client(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new client."""
-    client = Client(**data.model_dump(), created_by=current_user.id)
+    client = Client(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user.id)
     db.add(client)
     await db.flush()
     await db.refresh(client)
@@ -68,7 +68,7 @@ async def update_client(
     current_user: User = Depends(get_current_user),
 ):
     """Update a client."""
-    result = await db.execute(select(Client).where(Client.id == client_id))
+    result = await db.execute(select(Client).where(Client.company_id == current_user["company_id"]).where(Client.id == client_id))
     client = result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -88,7 +88,7 @@ async def delete_client(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a client."""
-    result = await db.execute(select(Client).where(Client.id == client_id))
+    result = await db.execute(select(Client).where(Client.company_id == current_user["company_id"]).where(Client.id == client_id))
     client = result.scalar_one_or_none()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")

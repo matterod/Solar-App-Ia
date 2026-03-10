@@ -26,26 +26,38 @@ async def get_dashboard_stats(
     """Get dashboard summary statistics."""
 
     # Total clients
-    clients_count = await db.execute(select(func.count(Client.id)))
+    clients_count = await db.execute(
+        select(func.count(Client.id)).where(Client.company_id == current_user["company_id"])
+    )
     total_clients = clients_count.scalar()
 
     # Installations by status
-    installations_count = await db.execute(select(func.count(Installation.id)))
+    installations_count = await db.execute(
+        select(func.count(Installation.id)).where(Installation.company_id == current_user["company_id"])
+    )
     total_installations = installations_count.scalar()
 
     active_installations = await db.execute(
-        select(func.count(Installation.id)).where(Installation.status.in_(["in_progress", "completed"]))
+        select(func.count(Installation.id)).where(
+            Installation.company_id == current_user["company_id"],
+            Installation.status.in_(["in_progress", "completed"])
+        )
     )
     active_count = active_installations.scalar()
 
     # Total system power
-    total_power = await db.execute(select(func.sum(Installation.system_power_kw)))
+    total_power = await db.execute(
+        select(func.sum(Installation.system_power_kw)).where(Installation.company_id == current_user["company_id"])
+    )
     total_kw = total_power.scalar() or 0
 
     # Upcoming maintenance (next 30 days)
     upcoming_maintenance = await db.execute(
-        select(func.count(Maintenance.id)).where(
+        select(func.count(Maintenance.id))
+        .join(Installation, Maintenance.installation_id == Installation.id)
+        .where(
             and_(
+                Installation.company_id == current_user["company_id"],
                 Maintenance.scheduled_date >= date.today(),
                 Maintenance.scheduled_date <= date.today() + timedelta(days=30),
                 Maintenance.status == "scheduled",
@@ -56,14 +68,23 @@ async def get_dashboard_stats(
 
     # Pending tasks
     pending_tasks = await db.execute(
-        select(func.count(PendingTask.id)).where(PendingTask.status == "pending")
+        select(func.count(PendingTask.id))
+        .join(Installation, PendingTask.installation_id == Installation.id)
+        .where(
+            Installation.company_id == current_user["company_id"],
+            PendingTask.status == "pending"
+        )
     )
     tasks_count = pending_tasks.scalar()
 
     # Low stock products
     low_stock = await db.execute(
         select(func.count(Product.id)).where(
-            and_(Product.current_stock <= Product.min_stock, Product.is_active == True)
+            and_(
+                Product.company_id == current_user["company_id"],
+                Product.current_stock <= Product.min_stock, 
+                Product.is_active == True
+            )
         )
     )
     low_stock_count = low_stock.scalar()

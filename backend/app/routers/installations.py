@@ -30,7 +30,7 @@ async def list_installations(
     current_user: User = Depends(get_current_user),
 ):
     """List installations with filters."""
-    query = select(Installation).offset(skip).limit(limit).order_by(Installation.created_at.desc())
+    query = select(Installation).where(Installation.company_id == current_user["company_id"]).offset(skip).limit(limit).order_by(Installation.created_at.desc())
     if status:
         query = query.where(Installation.status == status)
     if search:
@@ -49,7 +49,7 @@ async def get_installation(
 ):
     """Get installation with all related data."""
     query = (
-        select(Installation)
+        select(Installation).where(Installation.company_id == current_user["company_id"])
         .options(
             selectinload(Installation.activities),
             selectinload(Installation.maintenance_records),
@@ -70,7 +70,7 @@ async def create_installation(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new installation and auto-schedule first maintenance."""
-    installation = Installation(**data.model_dump(), created_by=current_user.id)
+    installation = Installation(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user.id)
     db.add(installation)
     await db.flush()
     await db.refresh(installation)
@@ -98,7 +98,7 @@ async def update_installation(
     current_user: User = Depends(get_current_user),
 ):
     """Update an installation."""
-    result = await db.execute(select(Installation).where(Installation.id == installation_id))
+    result = await db.execute(select(Installation).where(Installation.company_id == current_user["company_id"]).where(Installation.id == installation_id))
     installation = result.scalar_one_or_none()
     if not installation:
         raise HTTPException(status_code=404, detail="Installation not found")
@@ -118,7 +118,7 @@ async def delete_installation(
     current_user: User = Depends(get_current_user),
 ):
     """Delete an installation."""
-    result = await db.execute(select(Installation).where(Installation.id == installation_id))
+    result = await db.execute(select(Installation).where(Installation.company_id == current_user["company_id"]).where(Installation.id == installation_id))
     installation = result.scalar_one_or_none()
     if not installation:
         raise HTTPException(status_code=404, detail="Installation not found")

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.maintenance import Maintenance
+from app.models.installation import Installation
 from app.models.user import User
 from app.schemas.maintenance import MaintenanceCreate, MaintenanceRead, MaintenanceUpdate
 
@@ -28,7 +29,14 @@ async def list_maintenance(
     current_user: User = Depends(get_current_user),
 ):
     """List maintenance records with filters."""
-    query = select(Maintenance).offset(skip).limit(limit).order_by(Maintenance.scheduled_date)
+    query = (
+        select(Maintenance)
+        .join(Installation, Maintenance.installation_id == Installation.id)
+        .where(Installation.company_id == current_user["company_id"])
+        .offset(skip)
+        .limit(limit)
+        .order_by(Maintenance.scheduled_date)
+    )
     if installation_id:
         query = query.where(Maintenance.installation_id == installation_id)
     if status:
@@ -68,7 +76,14 @@ async def update_maintenance(
     current_user: User = Depends(get_current_user),
 ):
     """Update a maintenance record."""
-    result = await db.execute(select(Maintenance).where(Maintenance.id == maintenance_id))
+    result = await db.execute(
+        select(Maintenance)
+        .join(Installation, Maintenance.installation_id == Installation.id)
+        .where(
+            Maintenance.id == maintenance_id,
+            Installation.company_id == current_user["company_id"]
+        )
+    )
     record = result.scalar_one_or_none()
     if not record:
         raise HTTPException(status_code=404, detail="Maintenance record not found")

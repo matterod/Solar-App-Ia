@@ -1,11 +1,8 @@
 -- ============================================================
 -- Solar ERP — Database Initialization Script
--- ============================================================
--- This script runs automatically when the PostgreSQL container
--- is created for the first time.
+-- Multi-Tenant Edition
 -- ============================================================
 
--- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
@@ -13,6 +10,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================================
 
 CREATE TYPE user_role AS ENUM ('admin', 'partner', 'technician');
+CREATE TYPE subscription_plan AS ENUM ('demo', 'pro');
+CREATE TYPE subscription_status AS ENUM ('active', 'inactive', 'cancelled');
 CREATE TYPE installation_status AS ENUM ('pending', 'in_progress', 'completed', 'maintenance', 'inactive');
 CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high', 'urgent');
 CREATE TYPE task_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');
@@ -20,6 +19,20 @@ CREATE TYPE payment_status AS ENUM ('pending', 'partial', 'paid', 'overdue');
 CREATE TYPE maintenance_status AS ENUM ('scheduled', 'in_progress', 'completed', 'cancelled');
 CREATE TYPE stock_movement_type AS ENUM ('incoming', 'outgoing');
 CREATE TYPE budget_status AS ENUM ('draft', 'sent', 'approved', 'rejected');
+CREATE TYPE problem_status AS ENUM ('open', 'resolved', 'ignored');
+
+-- ============================================================
+-- COMPANIES (Tenants)
+-- ============================================================
+
+CREATE TABLE companies (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    plan subscription_plan NOT NULL DEFAULT 'demo',
+    subscription_status subscription_status NOT NULL DEFAULT 'active',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- ============================================================
 -- USERS
@@ -27,16 +40,20 @@ CREATE TYPE budget_status AS ENUM ('draft', 'sent', 'approved', 'rejected');
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    firebase_uid VARCHAR(128) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    hashed_password VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'technician',
     is_active BOOLEAN NOT NULL DEFAULT true,
     phone VARCHAR(50),
     avatar_url TEXT,
+    message_count INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_users_company ON users(company_id);
 
 -- ============================================================
 -- CLIENTS
@@ -44,6 +61,7 @@ CREATE TABLE users (
 
 CREATE TABLE clients (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     phone VARCHAR(50),
@@ -58,12 +76,15 @@ CREATE TABLE clients (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_clients_company ON clients(company_id);
+
 -- ============================================================
 -- INSTALLATIONS
 -- ============================================================
 
 CREATE TABLE installations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
     location_name VARCHAR(255) NOT NULL,
     address TEXT NOT NULL,
@@ -85,6 +106,7 @@ CREATE TABLE installations (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_installations_company ON installations(company_id);
 CREATE INDEX idx_installations_client ON installations(client_id);
 CREATE INDEX idx_installations_status ON installations(status);
 CREATE INDEX idx_installations_date ON installations(installation_date);
@@ -95,6 +117,7 @@ CREATE INDEX idx_installations_date ON installations(installation_date);
 
 CREATE TABLE activities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     installation_id UUID NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id),
     title VARCHAR(255) NOT NULL,
@@ -104,8 +127,8 @@ CREATE TABLE activities (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_activities_company ON activities(company_id);
 CREATE INDEX idx_activities_installation ON activities(installation_id);
-CREATE INDEX idx_activities_date ON activities(activity_date);
 
 -- ============================================================
 -- PHOTOS
@@ -113,6 +136,7 @@ CREATE INDEX idx_activities_date ON activities(activity_date);
 
 CREATE TABLE photos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     installation_id UUID NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
     filename VARCHAR(255) NOT NULL,
     original_filename VARCHAR(255),
@@ -125,6 +149,7 @@ CREATE TABLE photos (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_photos_company ON photos(company_id);
 CREATE INDEX idx_photos_installation ON photos(installation_id);
 
 -- ============================================================
@@ -133,7 +158,8 @@ CREATE INDEX idx_photos_installation ON photos(installation_id);
 
 CREATE TABLE pending_tasks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    installation_id UUID REFERENCES installations(id) ON DELETE SET NULL,
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    installation_id UUID REFERENCES installations(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     priority task_priority NOT NULL DEFAULT 'medium',
@@ -146,6 +172,7 @@ CREATE TABLE pending_tasks (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_tasks_company ON pending_tasks(company_id);
 CREATE INDEX idx_tasks_installation ON pending_tasks(installation_id);
 CREATE INDEX idx_tasks_status ON pending_tasks(status);
 CREATE INDEX idx_tasks_assigned ON pending_tasks(assigned_to);
@@ -156,8 +183,9 @@ CREATE INDEX idx_tasks_assigned ON pending_tasks(assigned_to);
 
 CREATE TABLE budgets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     installation_id UUID NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
-    budget_number VARCHAR(50) UNIQUE,
+    budget_number VARCHAR(50),
     title VARCHAR(255) NOT NULL,
     description TEXT,
     subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0,
@@ -169,9 +197,11 @@ CREATE TABLE budgets (
     notes TEXT,
     created_by UUID REFERENCES users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(company_id, budget_number)
 );
 
+CREATE INDEX idx_budgets_company ON budgets(company_id);
 CREATE INDEX idx_budgets_installation ON budgets(installation_id);
 
 -- ============================================================
@@ -188,14 +218,17 @@ CREATE TABLE budget_items (
     sort_order INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE INDEX idx_budget_items_budget ON budget_items(budget_id);
+
 -- ============================================================
 -- PAYMENTS
 -- ============================================================
 
 CREATE TABLE payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     installation_id UUID NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
-    budget_id UUID REFERENCES budgets(id),
+    budget_id UUID REFERENCES budgets(id) ON DELETE SET NULL,
     amount DECIMAL(12, 2) NOT NULL,
     payment_date DATE NOT NULL,
     payment_method VARCHAR(100),
@@ -206,6 +239,7 @@ CREATE TABLE payments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_payments_company ON payments(company_id);
 CREATE INDEX idx_payments_installation ON payments(installation_id);
 
 -- ============================================================
@@ -214,6 +248,7 @@ CREATE INDEX idx_payments_installation ON payments(installation_id);
 
 CREATE TABLE maintenance (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     installation_id UUID NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
     scheduled_date DATE NOT NULL,
     completed_date DATE,
@@ -227,6 +262,7 @@ CREATE TABLE maintenance (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_maintenance_company ON maintenance(company_id);
 CREATE INDEX idx_maintenance_installation ON maintenance(installation_id);
 CREATE INDEX idx_maintenance_date ON maintenance(scheduled_date);
 CREATE INDEX idx_maintenance_status ON maintenance(status);
@@ -237,8 +273,9 @@ CREATE INDEX idx_maintenance_status ON maintenance(status);
 
 CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    sku VARCHAR(100) UNIQUE,
+    sku VARCHAR(100),
     description TEXT,
     category VARCHAR(100),
     unit VARCHAR(50) NOT NULL DEFAULT 'units',
@@ -247,8 +284,11 @@ CREATE TABLE products (
     unit_cost DECIMAL(12, 2),
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(company_id, sku)
 );
+
+CREATE INDEX idx_products_company ON products(company_id);
 
 -- ============================================================
 -- STOCK MOVEMENTS
@@ -256,6 +296,7 @@ CREATE TABLE products (
 
 CREATE TABLE stock_movements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     installation_id UUID REFERENCES installations(id),
     movement_type stock_movement_type NOT NULL,
@@ -265,6 +306,7 @@ CREATE TABLE stock_movements (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_stock_movements_company ON stock_movements(company_id);
 CREATE INDEX idx_stock_product ON stock_movements(product_id);
 CREATE INDEX idx_stock_installation ON stock_movements(installation_id);
 
@@ -272,10 +314,9 @@ CREATE INDEX idx_stock_installation ON stock_movements(installation_id);
 -- KNOWLEDGE BASE (Problems & Solutions)
 -- ============================================================
 
-CREATE TYPE problem_status AS ENUM ('open', 'resolved', 'ignored');
-
 CREATE TABLE problem (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     title VARCHAR(150) NOT NULL,
     description TEXT NOT NULL,
     status problem_status NOT NULL DEFAULT 'open',
@@ -283,6 +324,8 @@ CREATE TABLE problem (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_problem_company ON problem(company_id);
 
 CREATE TABLE solution (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -295,11 +338,8 @@ CREATE INDEX idx_solution_problem ON solution(problem_id);
 
 
 -- ============================================================
--- SEED DATA — Default admin user
+-- SEED DATA 
 -- ============================================================
--- Default login:
--- Email: admin@solarerp.com
--- Password: admin123
-
-INSERT INTO users (email, hashed_password, full_name, role) VALUES
-('admin@solarerp.com', '$2b$12$Sdhni1JZnPe5HSS6EFHO2eOFRDnQAIWmZ3HSV3QZ6ySNLpUtMX7OK', 'Administrador', 'admin');
+-- Master company
+INSERT INTO companies (id, name, plan) VALUES
+('11111111-1111-1111-1111-111111111111', 'Proyecto Solar', 'pro');

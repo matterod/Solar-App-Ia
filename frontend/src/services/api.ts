@@ -1,14 +1,19 @@
 /** Solar ERP — Centralized API Client */
 
+import { auth as firebaseAuth } from "@/lib/firebase";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-function getToken(): string | null {
+async function getToken(): Promise<string | null> {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem("solar_token");
+    if (firebaseAuth.currentUser) {
+        return await firebaseAuth.currentUser.getIdToken();
+    }
+    return null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const token = getToken();
+    const token = await getToken();
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(options.headers as Record<string, string>),
@@ -18,8 +23,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const res = await fetch(`${API_URL}/api/v1${path}`, { ...options, headers });
 
     if (res.status === 401) {
-        localStorage.removeItem("solar_token");
-        window.location.href = "/";
+        // Token auth failed
         throw new Error("Sesión expirada");
     }
 
@@ -32,31 +36,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 /* ── Auth ── */
 export const auth = {
-    login: async (email: string, password: string) => {
-        const res = await fetch(`${API_URL}/api/v1/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.detail || "Credenciales incorrectas");
-        }
-        const data = await res.json();
-        localStorage.setItem("solar_token", data.access_token);
-        return data;
-    },
-    register: async (email: string, password: string, fullName: string) => {
-        return request<{ id: string }>("/auth/register", {
-            method: "POST",
-            body: JSON.stringify({ email, password, full_name: fullName, role: "admin" }),
-        });
-    },
-    me: () => request<{ id: string; email: string; full_name: string; role: string }>("/auth/me"),
-    logout: () => {
-        localStorage.removeItem("solar_token");
-        window.location.href = "/";
-    },
+    getMe: () => request<{ id: string; email: string; full_name: string; role: string; company_id: string; }>("/auth/me"),
 };
 
 /* ── Clients ── */
@@ -187,9 +167,9 @@ export interface AgentResponse {
     metadata?: Record<string, unknown>;
 }
 export const agent = {
-    chat: (message: string) => request<AgentResponse>("/agent/chat", {
+    chat: (message: string, history: any[] = []) => request<AgentResponse>("/agent/chat", {
         method: "POST",
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, history }),
     }),
 };
 

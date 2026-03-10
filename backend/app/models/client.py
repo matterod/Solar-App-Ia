@@ -14,6 +14,7 @@ class Client(Base):
     __tablename__ = "clients"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str | None] = mapped_column(String(50))
@@ -28,4 +29,5 @@ class Client(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
+    erp_company = relationship("Company", back_populates="clients")
     installations = relationship("Installation", back_populates="client", cascade="all, delete-orphan")

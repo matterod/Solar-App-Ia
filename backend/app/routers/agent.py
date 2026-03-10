@@ -154,7 +154,7 @@ async def chat_with_agent(
                 tool_calls=tool_calls_log,
                 metadata={
                     "model": "claude-sonnet-4-20250514",
-                    "user": current_user.email,
+                    "user": current_user["email"]
                 },
             )
 

@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_, desc, update
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 
 from app.database import get_db
+from app.auth import get_current_user
+from app.models.user import User
 from app.models.problem import Problem
 from app.models.solution import Solution
 
@@ -49,53 +52,99 @@ class ProblemResponse(ProblemBase):
 
 
 @router.post("/", response_model=ProblemResponse)
-def create_problem(problem: ProblemCreate, db: Session = Depends(get_db)):
-    db_obj = Problem(**problem.model_dump())
+async def create_problem(
+    problem: ProblemCreate, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    db_obj = Problem(company_id=current_user["company_id"], **problem.model_dump())
     db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
+    await db.commit()
+    await db.refresh(db_obj)
     return db_obj
 
 @router.get("/", response_model=List[ProblemResponse])
-def get_problems(search: Optional[str] = None, status: Optional[str] = None, db: Session = Depends(get_db)):
-    q = db.query(Problem)
-    if search:
-        q = q.filter(or_(Problem.title.ilike(f"%{search}%"), Problem.description.ilike(f"%{search}%")))
-    if status:
-        q = q.filter(Problem.status == status)
+async def get_problems(
+    search: Optional[str] = None, 
+    status: Optional[str] = None, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    q = select(Problem).options(selectinload(Problem.solutions)).where(Problem.company_id == current_user["company_id"])
     
-    return q.order_by(desc(Problem.created_at)).all()
+    if search:
+        q = q.where(or_(Problem.title.ilike(f"%{search}%"), Problem.description.ilike(f"%{search}%")))
+    if status:
+        q = q.where(Problem.status == status)
+    
+    q = q.order_by(desc(Problem.created_at))
+    result = await db.execute(q)
+    return result.scalars().all()
 
 @router.get("/{problem_id}", response_model=ProblemResponse)
-def get_problem(problem_id: UUID, db: Session = Depends(get_db)):
-    db_obj = db.query(Problem).filter(Problem.id == problem_id).first()
+async def get_problem(
+    problem_id: UUID, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    q = select(Problem).options(selectinload(Problem.solutions)).where(
+        Problem.id == problem_id, 
+        Problem.company_id == current_user["company_id"]
+
+    )
+    result = await db.execute(q)
+    db_obj = result.scalar_one_or_none()
+    
     if not db_obj:
         raise HTTPException(status_code=404, detail="Problem not found")
     return db_obj
 
 @router.put("/{problem_id}", response_model=ProblemResponse)
-def update_problem(problem_id: UUID, update_data: ProblemUpdate, db: Session = Depends(get_db)):
-    db_obj = db.query(Problem).filter(Problem.id == problem_id).first()
+async def update_problem(
+    problem_id: UUID, 
+    update_data: ProblemUpdate, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    q = select(Problem).options(selectinload(Problem.solutions)).where(
+        Problem.id == problem_id, 
+        Problem.company_id == current_user["company_id"]
+
+    )
+    result = await db.execute(q)
+    db_obj = result.scalar_one_or_none()
+    
     if not db_obj:
         raise HTTPException(status_code=404, detail="Problem not found")
     
     for key, value in update_data.model_dump(exclude_unset=True).items():
         setattr(db_obj, key, value)
     
-    db.commit()
-    db.refresh(db_obj)
+    await db.commit()
+    await db.refresh(db_obj)
     return db_obj
 
 @router.post("/{problem_id}/solutions", response_model=SolutionResponse)
-def add_solution(problem_id: UUID, solution: SolutionCreate, db: Session = Depends(get_db)):
-    db_problem = db.query(Problem).filter(Problem.id == problem_id).first()
+async def add_solution(
+    problem_id: UUID, 
+    solution: SolutionCreate, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    q = select(Problem).where(
+        Problem.id == problem_id, 
+        Problem.company_id == current_user["company_id"]
+
+    )
+    result = await db.execute(q)
+    db_problem = result.scalar_one_or_none()
+    
     if not db_problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     
-    db_solution = Solution(**solution.model_dump(), problem_id=problem_id)
+    db_solution = Solution(company_id=current_user["company_id"], **solution.model_dump(), problem_id=problem_id)
     db.add(db_solution)
-    # Automatically resolve problem when solution is added
     db_problem.status = "resolved"
-    db.commit()
-    db.refresh(db_solution)
+    await db.commit()
+    await db.refresh(db_solution)
     return db_solution

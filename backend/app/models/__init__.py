@@ -3,6 +3,7 @@ Solar ERP — SQLAlchemy Models
 All database models matching the PostgreSQL schema.
 """
 
+from app.models.company import Company
 from app.models.user import User
 from app.models.client import Client
 from app.models.installation import Installation
@@ -18,6 +19,7 @@ from app.models.problem import Problem
 from app.models.solution import Solution
 
 __all__ = [
+    "Company",
     "User",
     "Client",
     "Installation",
