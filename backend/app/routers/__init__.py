@@ -13,3 +13,4 @@ from app.routers.stock import router as stock_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.agent import router as agent_router
 from app.routers.problems import router as problems_router
+from app.routers.invitations import router as invitations_router

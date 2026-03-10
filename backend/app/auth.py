@@ -62,26 +62,56 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     
     if not user:
-        # First time login... Option A: Create a demo company automatically
-        new_company = Company(
-            name=f"Demo de {name}",
-            plan="demo"
+        from app.models.invitation import CompanyInvitation
+        # Check if the email exists in company_invitations with status 'pending'
+        inv_result = await db.execute(
+            select(CompanyInvitation)
+            .where(
+                CompanyInvitation.email == email,
+                CompanyInvitation.status == 'pending'
+            )
         )
-        db.add(new_company)
-        await db.flush() # flush to get company ID
+        invitation = inv_result.scalars().first()
 
-        user = User(
-            firebase_uid=firebase_uid,
-            email=email,
-            full_name=name,
-            company_id=new_company.id,
-            role="admin" # Admin of their own demo company
-        )
-        db.add(user)
-        # Re-attach the company manually due to the flush
-        user.company = new_company
-        await db.commit()
-        await db.refresh(user)
+        if invitation:
+            # Join the existing company
+            user = User(
+                firebase_uid=firebase_uid,
+                email=email,
+                full_name=name,
+                company_id=invitation.company_id,
+                role=invitation.role
+            )
+            invitation.status = 'accepted'
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            
+            # Explicitly load company
+            company_result = await db.execute(select(Company).where(Company.id == user.company_id))
+            user.company = company_result.scalar_one()
+
+        else:
+            # First time login... Option A: Create a demo company automatically
+            new_company = Company(
+                name=f"Demo de {name}",
+                plan="demo"
+            )
+            db.add(new_company)
+            await db.flush() # flush to get company ID
+
+            user = User(
+                firebase_uid=firebase_uid,
+                email=email,
+                full_name=name,
+                company_id=new_company.id,
+                role="admin" # Admin of their own demo company
+            )
+            db.add(user)
+            # Re-attach the company manually due to the flush
+            user.company = new_company
+            await db.commit()
+            await db.refresh(user)
     
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")

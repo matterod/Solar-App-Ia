@@ -20,10 +20,9 @@ class UserRead(BaseModel):
     email: str
     full_name: str
     role: str
-    is_active: bool
-    phone: Optional[str] = None
-    avatar_url: Optional[str] = None
-    created_at: datetime
+    company_id: uuid.UUID
+    company_name: Optional[str] = None
+    plan: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

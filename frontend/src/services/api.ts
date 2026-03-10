@@ -36,7 +36,18 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 /* ── Auth ── */
 export const auth = {
-    getMe: () => request<{ id: string; email: string; full_name: string; role: string; company_id: string; }>("/auth/me"),
+    getMe: () => request<{ id: string; email: string; full_name: string; role: string; company_id: string; company_name?: string | null; plan?: string | null; }>("/auth/me"),
+};
+
+/* ── Invitations ── */
+export interface Invitation {
+    id: string; company_id: string; email: string; role: string;
+    status: string; created_at: string;
+}
+export const invitations = {
+    list: () => request<Invitation[]>("/invitations/"),
+    create: (data: { email: string; role: string }) => request<Invitation>("/invitations/", { method: "POST", body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>(`/invitations/${id}`, { method: "DELETE" }),
 };
 
 /* ── Clients ── */

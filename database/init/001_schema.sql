@@ -20,6 +20,7 @@ CREATE TYPE maintenance_status AS ENUM ('scheduled', 'in_progress', 'completed',
 CREATE TYPE stock_movement_type AS ENUM ('incoming', 'outgoing');
 CREATE TYPE budget_status AS ENUM ('draft', 'sent', 'approved', 'rejected');
 CREATE TYPE problem_status AS ENUM ('open', 'resolved', 'ignored');
+CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'expired');
 
 -- ============================================================
 -- COMPANIES (Tenants)
@@ -54,6 +55,23 @@ CREATE TABLE users (
 );
 
 CREATE INDEX idx_users_company ON users(company_id);
+
+-- ============================================================
+-- INVITATIONS
+-- ============================================================
+
+CREATE TABLE company_invitations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    role user_role NOT NULL DEFAULT 'technician',
+    status invitation_status NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '7 days',
+    UNIQUE(company_id, email)
+);
+
+CREATE INDEX idx_invitations_company ON company_invitations(company_id);
 
 -- ============================================================
 -- CLIENTS
