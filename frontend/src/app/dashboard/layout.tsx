@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
+import InvitationBanner from "@/components/InvitationBanner";
 
 export default function DashboardLayout({
     children,
@@ -32,9 +33,11 @@ export default function DashboardLayout({
             <Sidebar />
             <main className="flex-1 md:ml-64">
                 <div className="gradient-mesh min-h-screen pt-14 md:pt-0">
+                    <InvitationBanner />
                     {children}
                 </div>
             </main>
         </div>
     );
 }
+

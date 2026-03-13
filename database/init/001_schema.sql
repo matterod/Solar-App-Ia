@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUM TYPES
 -- ============================================================
 
-CREATE TYPE user_role AS ENUM ('admin', 'partner', 'technician');
+CREATE TYPE user_role AS ENUM ('admin', 'partner', 'installer', 'accountant');
 CREATE TYPE subscription_plan AS ENUM ('demo', 'pro');
 CREATE TYPE subscription_status AS ENUM ('active', 'inactive', 'cancelled');
 CREATE TYPE installation_status AS ENUM ('pending', 'in_progress', 'completed', 'maintenance', 'inactive');
@@ -45,7 +45,7 @@ CREATE TABLE users (
     firebase_uid VARCHAR(128) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     full_name VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'technician',
+    role user_role NOT NULL DEFAULT 'installer',
     is_active BOOLEAN NOT NULL DEFAULT true,
     phone VARCHAR(50),
     avatar_url TEXT,
@@ -64,7 +64,7 @@ CREATE TABLE company_invitations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     email VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'technician',
+    role user_role NOT NULL DEFAULT 'installer',
     status invitation_status NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '7 days',

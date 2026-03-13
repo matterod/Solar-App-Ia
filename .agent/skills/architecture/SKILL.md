@@ -57,16 +57,12 @@ solar-erp/
 │   └── app/
 │       ├── models/    # SQLAlchemy models
 │       ├── schemas/   # Pydantic schemas
-│       ├── routers/   # API endpoints
+│       ├── routers/   # API endpoints (includes agent.py)
+│       ├── services/  # Business logic & agent tools
+│       │   └── agent/ # Tool registry, CRUD tools, schema inspector
 │       ├── auth.py    # Authentication
 │       ├── config.py  # Settings
 │       ├── database.py
-│       └── main.py
-├── agent/             # AI Agent "Sol"
-│   └── sol/
-│       ├── tools.py   # Tool definitions
-│       ├── client.py  # Backend API client
-│       ├── config.py
 │       └── main.py
 ├── database/          # SQL init scripts
 │   └── init/
@@ -82,6 +78,5 @@ solar-erp/
 2. Create the Pydantic schema in `backend/app/schemas/`
 3. Create the API router in `backend/app/routers/`
 4. Register the router in `backend/app/main.py`
-5. Add any new tool definitions in `agent/sol/tools.py`
-6. Add the API method in `agent/sol/client.py`
-7. Create the frontend page in `frontend/src/app/dashboard/`
+5. If the agent needs a new tool, create it in `backend/app/services/` and register it in `backend/app/services/agent/tool_registry.py`
+6. Create the frontend page in `frontend/src/app/dashboard/`

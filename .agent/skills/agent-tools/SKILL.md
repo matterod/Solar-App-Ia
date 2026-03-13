@@ -20,6 +20,7 @@ Las herramientas actuales están registradas de forma centralizada en `backend/a
 | Tool                       | Description                                                             | Ubicación                             |
 | -------------------------- | ----------------------------------------------------------------------- | ------------------------------------- |
 | `describe_database_schema` | Lee la estructura de la base de datos para saber qué campos utilizar.   | `app.services.agent.schema_inspector` |
+| `preview_table_data`       | Previsualiza datos de una tabla (primeras filas).                       | `app.services.agent.schema_inspector` |
 | `create_record`            | Crea cualquier registro genérico (Cliente, Instalación, etc.) dinámico. | `app.services.agent.crud_tools`       |
 | `update_record`            | Actualiza cualquier registro genérico.                                  | `app.services.agent.crud_tools`       |
 | `delete_record`            | Borra cualquier registro genérico.                                      | `app.services.agent.crud_tools`       |
@@ -57,8 +58,7 @@ Para agregar una nueva herramienta:
 2. **Definir el schema de la tool**: En el mismo archivo o en uno de esquemas de API de Claude.
 3. **Registrarla en `tool_registry.py`**:
    - Importar la función y el schema.
-   - Agregar el schema a la lista `_TOOLS`.
-   - Agregar la función al diccionario `_TOOL_HANDLERS`.
+   - Registrar con `registry.register(AgentTool(name=..., description=..., category=..., input_schema=..., handler=...))`.
 
 ## System Prompt Language
 

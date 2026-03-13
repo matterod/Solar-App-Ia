@@ -62,19 +62,21 @@ async def get_current_user(
     user = result.scalar_one_or_none()
     
     if not user:
+        # First time login — check for pending invitations
         from app.models.invitation import CompanyInvitation
-        # Check if the email exists in company_invitations with status 'pending'
+        
+        # Look for a pending invitation for this email
         inv_result = await db.execute(
             select(CompanyInvitation)
             .where(
                 CompanyInvitation.email == email,
-                CompanyInvitation.status == 'pending'
+                CompanyInvitation.status == "pending"
             )
         )
         invitation = inv_result.scalars().first()
-
+        
         if invitation:
-            # Join the existing company
+            # Join the invited company
             user = User(
                 firebase_uid=firebase_uid,
                 email=email,
@@ -82,36 +84,27 @@ async def get_current_user(
                 company_id=invitation.company_id,
                 role=invitation.role
             )
-            invitation.status = 'accepted'
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
-            
-            # Explicitly load company
-            company_result = await db.execute(select(Company).where(Company.id == user.company_id))
-            user.company = company_result.scalar_one()
-
+            invitation.status = "accepted"
         else:
-            # First time login... Option A: Create a demo company automatically
+            # No invitation — create a new demo company
             new_company = Company(
                 name=f"Demo de {name}",
                 plan="demo"
             )
             db.add(new_company)
-            await db.flush() # flush to get company ID
+            await db.flush()
 
             user = User(
                 firebase_uid=firebase_uid,
                 email=email,
                 full_name=name,
                 company_id=new_company.id,
-                role="admin" # Admin of their own demo company
+                role="admin"
             )
-            db.add(user)
-            # Re-attach the company manually due to the flush
-            user.company = new_company
-            await db.commit()
-            await db.refresh(user)
+        
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
     
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")

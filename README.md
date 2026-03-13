@@ -38,11 +38,11 @@ docker compose up --build
 ### Access
 
 | Service     | URL                        |
-|-------------|----------------------------|
-| Frontend    | http://localhost:3000       |
-| Backend API | http://localhost:8000       |
-| API Docs    | http://localhost:8000/docs  |
-| Database    | localhost:5432              |
+| ----------- | -------------------------- |
+| Frontend    | http://localhost:3000      |
+| Backend API | http://localhost:8000      |
+| API Docs    | http://localhost:8000/docs |
+| Database    | localhost:5432             |
 
 ## Project Structure
 
@@ -60,23 +60,24 @@ solar-erp/
 
 ## Technology Stack
 
-| Layer      | Technology                                  |
-|------------|---------------------------------------------|
-| Frontend   | Next.js, React, TypeScript, TailwindCSS, Framer Motion |
-| Backend    | FastAPI, Python, SQLAlchemy, Pydantic       |
-| Database   | PostgreSQL                                  |
-| AI Agent   | LLM Agent with tool-based API integration   |
-| Storage    | S3-compatible (Cloudflare R2)               |
-| Messaging  | WhatsApp API integration                    |
-| Infra      | Docker, Docker Compose                      |
+| Layer     | Technology                                             |
+| --------- | ------------------------------------------------------ |
+| Frontend  | Next.js, React, TypeScript, TailwindCSS, Framer Motion |
+| Backend   | FastAPI, Python, SQLAlchemy, Pydantic                  |
+| Database  | PostgreSQL                                             |
+| AI Agent  | LLM Agent with tool-based API integration              |
+| Storage   | S3-compatible (Cloudflare R2)                          |
+| Messaging | WhatsApp API integration                               |
+| Infra     | Docker, Docker Compose                                 |
 
 ## User Roles
 
-| Role       | Access                                      |
-|------------|---------------------------------------------|
-| Admin      | Full access                                 |
-| Partner    | Installations, clients, budgets             |
-| Technician | Installations, activities, maintenance      |
+| Role       | Access                                 |
+| ---------- | -------------------------------------- |
+| Admin      | Full access                            |
+| Partner    | Full access (Company level)            |
+| Installer  | Installations, activities, maintenance |
+| Accountant | Financials, budgets, payments          |
 
 ## AI Agent — Sol
 

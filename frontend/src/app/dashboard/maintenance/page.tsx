@@ -6,7 +6,7 @@ import { maintenance, Maintenance, installations, Installation } from "@/service
 
 const statusLabels: Record<string, { label: string; color: string }> = {
     scheduled: { label: "Programado", color: "bg-sky-100 text-sky-700" },
-    in_progress: { label: "En Progreso", color: "bg-amber-100 text-amber-700" },
+    in_progress: { label: "En Progreso", color: "bg-sky-100 text-sky-700" },
     completed: { label: "Completado", color: "bg-emerald-100 text-emerald-700" },
     cancelled: { label: "Cancelado", color: "bg-red-100 text-red-700" },
 };
@@ -56,7 +56,7 @@ export default function MaintenancePage() {
                     <p className="text-sm text-slate-500 mt-1">{data.length} registro{data.length !== 1 ? "s" : ""}</p>
                 </div>
                 <button onClick={() => { if (instList.length === 0) { alert("Primero creá una instalación."); return; } setShowModal(true); }}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-medium shadow-md shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 transition-all hover:-translate-y-0.5 flex items-center gap-2 self-start">
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 text-white text-sm font-medium shadow-md shadow-violet-500/20 hover:from-violet-400 hover:to-violet-500 transition-all hover:-translate-y-0.5 flex items-center gap-2 self-start">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     Programar Mantenimiento
                 </button>
@@ -150,7 +150,7 @@ export default function MaintenancePage() {
                                     </div>
                                     <div className="flex justify-end gap-3 pt-2">
                                         <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Cancelar</button>
-                                        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-400 disabled:opacity-50">{saving ? "Guardando..." : "Programar"}</button>
+                                        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-violet-500 text-white text-sm font-medium hover:bg-violet-400 disabled:opacity-50">{saving ? "Guardando..." : "Programar"}</button>
                                     </div>
                                 </form>
                             </div>

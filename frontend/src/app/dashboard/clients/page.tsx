@@ -271,7 +271,7 @@ export default function ClientsPage() {
                                                             {inst.location_name}
                                                             {inst.status === "completed" && <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Completada</span>}
                                                             {inst.status === "in_progress" && <span className="bg-sky-100 text-sky-700 text-[10px] px-2 py-0.5 rounded-full font-bold">En Progreso</span>}
-                                                            {inst.status === "pending" && <span className="bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Pendiente</span>}
+                                                            {inst.status === "pending" && <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold">Pendiente</span>}
                                                         </h4>
                                                         <p className="text-xs text-slate-500 mt-1">📍 {[inst.address, inst.city].filter(Boolean).join(", ")}</p>
                                                     </div>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { installations, Installation, clients, Client } from "@/services/api";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-    pending: { label: "Pendiente", color: "bg-amber-100 text-amber-700" },
+    pending: { label: "Pendiente", color: "bg-slate-100 text-slate-600" },
     in_progress: { label: "En Progreso", color: "bg-sky-100 text-sky-700" },
     completed: { label: "Completada", color: "bg-emerald-100 text-emerald-700" },
     cancelled: { label: "Cancelada", color: "bg-red-100 text-red-700" },

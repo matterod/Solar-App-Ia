@@ -9,7 +9,7 @@ const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
         opacity: 1, y: 0,
-        transition: { delay: i * 0.08, type: "spring", stiffness: 300, damping: 30 },
+        transition: { delay: i * 0.08, type: "spring" as const, stiffness: 300, damping: 30 },
     }),
 };
 
@@ -28,7 +28,7 @@ export default function DashboardPage() {
         { label: "Clientes", value: stats.total_clients, icon: "👥", href: "/dashboard/clients", color: "from-sky-500 to-sky-600", shadow: "shadow-sky-500/20" },
         { label: "Instalaciones", value: stats.total_installations, icon: "⚡", href: "/dashboard/installations", color: "from-emerald-500 to-emerald-600", shadow: "shadow-emerald-500/20" },
         { label: "Activas", value: stats.active_installations, icon: "✅", href: "/dashboard/installations", color: "from-teal-500 to-teal-600", shadow: "shadow-teal-500/20" },
-        { label: "Potencia Total", value: `${stats.total_power_kw} kW`, icon: "☀️", href: "#", color: "from-amber-500 to-amber-600", shadow: "shadow-amber-500/20" },
+        { label: "Potencia Total", value: `${stats.total_power_kw} kW`, icon: "☀️", href: "#", color: "from-sky-500 to-sky-600", shadow: "shadow-sky-500/20" },
         { label: "Mantenimientos", value: stats.upcoming_maintenance, icon: "🔧", href: "/dashboard/maintenance", color: "from-violet-500 to-violet-600", shadow: "shadow-violet-500/20" },
         { label: "Tareas Pendientes", value: stats.pending_tasks, icon: "📋", href: "/dashboard/activities", color: "from-rose-500 to-rose-600", shadow: "shadow-rose-500/20" },
         { label: "Stock Bajo", value: stats.low_stock_products, icon: "📦", href: "/dashboard/inventory", color: "from-orange-500 to-orange-600", shadow: "shadow-orange-500/20" },

@@ -44,10 +44,16 @@ export interface Invitation {
     id: string; company_id: string; email: string; role: string;
     status: string; created_at: string;
 }
+export interface ReceivedInvitation extends Invitation {
+    company_name: string;
+}
 export const invitations = {
     list: () => request<Invitation[]>("/invitations/"),
     create: (data: { email: string; role: string }) => request<Invitation>("/invitations/", { method: "POST", body: JSON.stringify(data) }),
     delete: (id: string) => request<void>(`/invitations/${id}`, { method: "DELETE" }),
+    received: () => request<ReceivedInvitation[]>("/invitations/received"),
+    accept: (id: string) => request<{ detail: string }>(`/invitations/${id}/accept`, { method: "POST" }),
+    reject: (id: string) => request<{ detail: string }>(`/invitations/${id}/reject`, { method: "POST" }),
 };
 
 /* ── Clients ── */
@@ -205,4 +211,16 @@ export const problems = {
     create: (data: Partial<Problem>) => request<Problem>("/problems/", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Problem>) => request<Problem>(`/problems/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     addSolution: (problem_id: string, description: string) => request<Solution>(`/problems/${problem_id}/solutions`, { method: "POST", body: JSON.stringify({ description }) }),
+};
+
+/* ── Team ── */
+export interface TeamMember {
+    id: string;
+    full_name: string;
+    email: string;
+    role: string;
+    is_active: boolean;
+}
+export const team = {
+    list: () => request<TeamMember[]>("/team/"),
 };

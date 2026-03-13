@@ -13,3 +13,4 @@ from app.schemas.product import ProductCreate, ProductRead, ProductUpdate
 from app.schemas.stock_movement import StockMovementCreate, StockMovementRead
 from app.schemas.budget import BudgetCreate, BudgetRead, BudgetItemCreate, BudgetItemRead
 from app.schemas.payment import PaymentCreate, PaymentRead
+from app.schemas.team import TeamMemberRead
