@@ -115,7 +115,7 @@ async def chat_with_agent(
     for _ in range(10):
         try:
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-haiku-4-5",
                 max_tokens=4096,
                 system=SYSTEM_PROMPT,
                 tools=get_tools(),
@@ -153,11 +153,11 @@ async def chat_with_agent(
                 response=text,
                 tool_calls=tool_calls_log,
                 metadata={
-                    "model": "claude-sonnet-4-20250514",
+                    "model": "claude-haiku-4-5",
                     "user": current_user["email"]
                 },
             )
-
+    
     return AgentResponse(
         response="Disculpá, la tarea fue muy larga y no pude completarla a tiempo. Por favor detallame qué quedó pendiente.",
         tool_calls=tool_calls_log,

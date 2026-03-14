@@ -53,9 +53,9 @@ The UI must evoke: **Sky · Clean Energy · Technology · Professional Engineeri
 ## Animation Rules
 
 - Use **Framer Motion** for all animations
-- Stagger children with `staggerChildren: 0.08`
+- Use manual staggered delay: `transition={{ delay: i * 0.05 }}`
 - Use `spring` transitions for interactive elements
-- `whileHover={{ y: -2 }}` or `whileHover={{ y: -3 }}` for cards
+- Use `hover:-translate-y-0.5` CSS class for card lift (avoid `whileHover`)
 - Animated sidebar indicator: `layoutId="sidebar-indicator"`
 
 ## Page Structure
@@ -77,6 +77,5 @@ border: 1px solid rgba(255, 255, 255, 0.3);
 ## Spacing
 
 - Page padding: `p-6 lg:p-8`
-- Max content width: `max-w-[1600px] mx-auto`
 - Card gaps: `gap-4` or `gap-6`
 - Section margins: `mb-6` or `mb-8`

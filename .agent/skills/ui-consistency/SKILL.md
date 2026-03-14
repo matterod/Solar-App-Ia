@@ -18,7 +18,6 @@ description: Solar ERP UI consistency rules — ensure all pages follow the desi
 - [ ] Page header with `text-2xl font-bold` title
 - [ ] Subtitle in `text-sm text-slate-500`
 - [ ] Action button in top-right (if applicable)
-- [ ] `max-w-[1600px] mx-auto` container
 - [ ] `p-6 lg:p-8` padding
 - [ ] Framer Motion `initial` → `animate` on main elements
 - [ ] Staggered animation for lists/grids
