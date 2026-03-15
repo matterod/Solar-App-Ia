@@ -28,8 +28,8 @@ class Settings(BaseSettings):
 
     # CORS — stored as plain string to avoid pydantic-settings JSON parsing issues.
     # Accepts JSON array string or comma-separated origins.
-    cors_origins: str = "http://localhost:3000"
-
+    cors_origins: str = "http://localhost:3000,https://linked-minds-solution.vercel.app"
+    
     def get_cors_origins(self) -> List[str]:
         raw = self.cors_origins.strip()
         if raw.startswith("["):

@@ -18,17 +18,18 @@ from app.models.company import Company
 
 # Initialize Firebase Admin if not already initialized
 if not firebase_admin._apps:
-    # Use default credentials or environment variables if needed
-    # For now, default app init assumes credentials are set via GOOGLE_APPLICATION_CREDENTIALS
-    # Or in development, it might work without it if we mock or just initialize an empty app.
-    # To properly use it, we usually do:
-    # cred = credentials.Certificate('path/to/my/firebase.json')
-    # firebase_admin.initialize_app(cred)
-    # But since we're using default, we try to init:
-    try:
-        firebase_admin.initialize_app()
-    except ValueError:
-        pass # Already initialized
+    import pathlib
+    # Look for serviceAccountKey.json relative to the project root
+    key_path = pathlib.Path(__file__).resolve().parent.parent / "serviceAccountKey.json"
+    if key_path.exists():
+        cred = credentials.Certificate(str(key_path))
+        firebase_admin.initialize_app(cred)
+    else:
+        # Fallback: use default credentials (e.g. GOOGLE_APPLICATION_CREDENTIALS env var)
+        try:
+            firebase_admin.initialize_app()
+        except ValueError:
+            pass
 
 security = HTTPBearer()
 
