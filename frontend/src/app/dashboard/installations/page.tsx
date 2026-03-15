@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { installations, Installation, clients, Client, costs, Cost, InstallationDetail } from "@/services/api";
 
@@ -40,16 +40,24 @@ export default function InstallationsPage() {
     });
     const [addingCost, setAddingCost] = useState(false);
 
-    const load = () => {
-        setLoading(true);
+    const isFirstMount = useRef(true);
+
+    const load = (silent = false) => {
+        if (!silent) setLoading(true);
         installations.list({ search: search || undefined, status: filterStatus || undefined })
-            .then(setData).catch(() => setData([])).finally(() => setLoading(false));
+            .then(setData)
+            .catch(() => setData([]))
+            .finally(() => setLoading(false));
     };
 
-    useEffect(() => { load(); clients.list().then(setClientList).catch(() => { }); }, []);
-
     useEffect(() => {
-        const t = setTimeout(load, 300);
+        if (isFirstMount.current) {
+            load();
+            clients.list().then(setClientList).catch(() => { });
+            isFirstMount.current = false;
+            return;
+        }
+        const t = setTimeout(() => load(true), 400);
         return () => clearTimeout(t);
     }, [search, filterStatus]);
 

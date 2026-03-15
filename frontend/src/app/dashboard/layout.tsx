@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import InvitationBanner from "@/components/InvitationBanner";
@@ -20,21 +21,38 @@ export default function DashboardLayout({
         }
     }, [user, loading, router]);
 
-    if (loading || !user) {
+    // Only show full page loader if we don't have a user OR we are specifically in a hard-loading state.
+    // However, if we already have a user, we should SHOW the layout to prevent the sidebar from disappearing.
+    const isAuthenticating = loading && !user;
+
+    if (isAuthenticating) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600"></div>
+                </div>
             </div>
         );
     }
 
+    // Still check for redirected state (determined in useEffect)
+    if (!user) {
+        return null; // Will redirect
+    }
+
     return (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen bg-slate-50">
             <Sidebar />
             <main className="flex-1 md:ml-64">
                 <div className="gradient-mesh min-h-screen pt-14 md:pt-0">
                     <InvitationBanner />
-                    {children}
+                    <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                    >
+                        {children}
+                    </motion.div>
                 </div>
             </main>
         </div>

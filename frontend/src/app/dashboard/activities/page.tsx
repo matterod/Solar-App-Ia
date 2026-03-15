@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { activities, Activity, installations, Installation, tasks, Task } from "@/services/api";
 
@@ -15,8 +15,10 @@ export default function ActivitiesPage() {
     const [actForm, setActForm] = useState({ installation_id: "", title: "", description: "", duration_minutes: "" });
     const [taskForm, setTaskForm] = useState({ title: "", description: "", priority: "medium", due_date: "", installation_id: "" });
 
-    const load = () => {
-        setLoading(true);
+    const isFirstMount = useRef(true);
+
+    const load = (silent = false) => {
+        if (!silent) setLoading(true);
         Promise.all([
             activities.list().then(setActData).catch(() => setActData([])),
             tasks.list().then(setTaskData).catch(() => setTaskData([])),
@@ -24,7 +26,12 @@ export default function ActivitiesPage() {
         ]).finally(() => setLoading(false));
     };
 
-    useEffect(() => { load(); }, []);
+    useEffect(() => {
+        if (isFirstMount.current) {
+            load();
+            isFirstMount.current = false;
+        }
+    }, []);
 
     const handleCreateActivity = async (e: React.FormEvent) => {
         e.preventDefault();

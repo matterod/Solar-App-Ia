@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clients, Client, installations, Installation } from "@/services/api";
 
@@ -14,15 +14,23 @@ export default function ClientsPage() {
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({ name: "", email: "", phone: "", company: "", city: "", province: "", address: "", notes: "" });
 
-    const load = (q?: string) => {
-        setLoading(true);
-        clients.list(q).then(setData).catch(() => setData([])).finally(() => setLoading(false));
+    const isFirstMount = useRef(true);
+
+    const load = (silent = false) => {
+        if (!silent) setLoading(true);
+        clients.list(search || undefined)
+            .then(setData)
+            .catch(() => setData([]))
+            .finally(() => setLoading(false));
     };
 
-    useEffect(() => { load(); }, []);
-
     useEffect(() => {
-        const t = setTimeout(() => load(search || undefined), 300);
+        if (isFirstMount.current) {
+            load();
+            isFirstMount.current = false;
+            return;
+        }
+        const t = setTimeout(() => load(true), 400);
         return () => clearTimeout(t);
     }, [search]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { maintenance, Maintenance, installations, Installation } from "@/services/api";
 
@@ -20,14 +20,25 @@ export default function MaintenancePage() {
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({ installation_id: "", scheduled_date: "", maintenance_type: "routine", description: "" });
 
-    const load = () => {
-        setLoading(true);
+    const isFirstMount = useRef(true);
+
+    const load = (silent = false) => {
+        if (!silent) setLoading(true);
         maintenance.list({ status: filterStatus || undefined })
-            .then(setData).catch(() => setData([])).finally(() => setLoading(false));
+            .then(setData)
+            .catch(() => setData([]))
+            .finally(() => setLoading(false));
     };
 
-    useEffect(() => { load(); installations.list().then(setInstList).catch(() => { }); }, []);
-    useEffect(() => { load(); }, [filterStatus]);
+    useEffect(() => {
+        if (isFirstMount.current) {
+            load();
+            installations.list().then(setInstList).catch(() => { });
+            isFirstMount.current = false;
+            return;
+        }
+        load(true);
+    }, [filterStatus]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();

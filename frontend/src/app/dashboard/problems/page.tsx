@@ -97,14 +97,25 @@ export default function ProblemsPage() {
         } catch (e) { console.error(e) }
     };
 
-    const load = () => {
-        setLoading(true);
+    const isFirstMount = useRef(true);
+
+    const load = (silent = false) => {
+        if (!silent) setLoading(true);
         problems.list({ search: search || undefined, status: filterStatus || undefined })
-            .then(setData).catch(() => setData([])).finally(() => setLoading(false));
+            .then(setData)
+            .catch(() => setData([]))
+            .finally(() => setLoading(false));
     };
 
-    useEffect(() => { load(); }, []);
-    useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [search, filterStatus]);
+    useEffect(() => {
+        if (isFirstMount.current) {
+            load();
+            isFirstMount.current = false;
+            return;
+        }
+        const t = setTimeout(() => load(true), 400);
+        return () => clearTimeout(t);
+    }, [search, filterStatus]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
