@@ -117,6 +117,8 @@ async def get_current_user(
         "company_id": user.company_id,
         "company_name": user.company.name if user.company else None,
         "plan": user.company.plan if user.company else None,
+        "is_superadmin": user.is_superadmin,
+        "ai_questions_used": user.message_count,
     }
 
 

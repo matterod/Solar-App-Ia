@@ -16,6 +16,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     role = Column(user_role_enum, default="installer", nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    is_superadmin = Column(Boolean, default=False, nullable=False)
     phone = Column(String(50))
     avatar_url = Column(String)
     message_count = Column(Integer, default=0, nullable=False)

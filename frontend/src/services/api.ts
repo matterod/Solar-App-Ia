@@ -246,3 +246,42 @@ export const costs = {
         request<Cost>("/costs/", { method: "POST", body: JSON.stringify(data) }),
     delete: (id: string) => request<void>(`/costs/${id}`, { method: "DELETE" }),
 };
+
+
+/* ── Plan & Usage ── */
+
+export interface UsageDetail {
+    used: number;
+    limit: number | null;
+}
+
+export interface PlanUsage {
+    plan: string;
+    ai_questions: UsageDetail;
+    clients: UsageDetail;
+    installations: UsageDetail;
+    team_members: UsageDetail;
+}
+
+export interface CompanyAdmin {
+    id: string;
+    name: string;
+    plan: string;
+    subscription_status: string;
+    user_count: number;
+    created_at: string;
+}
+
+export const plan = {
+    usage: () => request<PlanUsage>("/plan/usage"),
+};
+
+export const admin = {
+    companies: () => request<CompanyAdmin[]>("/admin/companies"),
+    changePlan: (companyId: string, newPlan: string) =>
+        request<CompanyAdmin>(`/admin/companies/${companyId}/plan`, {
+            method: "PUT",
+            body: JSON.stringify({ plan: newPlan }),
+        }),
+    stats: () => request<{ total_companies: number; total_users: number; demo_count: number; pro_count: number }>("/admin/stats"),
+};

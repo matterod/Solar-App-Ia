@@ -48,6 +48,7 @@ CREATE TABLE users (
     full_name VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'installer',
     is_active BOOLEAN NOT NULL DEFAULT true,
+    is_superadmin BOOLEAN NOT NULL DEFAULT false,
     phone VARCHAR(50),
     avatar_url TEXT,
     message_count INTEGER NOT NULL DEFAULT 0,

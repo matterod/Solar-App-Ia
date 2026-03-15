@@ -12,6 +12,7 @@ from app.models.user import User
 from app.models.company import Company
 from app.models.invitation import CompanyInvitation
 from app.schemas.invitation import InvitationCreate, InvitationRead, InvitationReceivedRead
+from app.services.plan_limits import check_limit
 
 router = APIRouter(prefix="/invitations", tags=["Invitations"])
 
@@ -37,6 +38,7 @@ async def create_invitation(
     invite_data: InvitationCreate,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role("admin", "partner")),
+    _limit=Depends(check_limit("team_members")),
 ):
     """Create a new invitation for a team member."""
     existing = await db.execute(

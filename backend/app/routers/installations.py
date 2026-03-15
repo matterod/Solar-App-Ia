@@ -17,6 +17,7 @@ from app.models.activity import Activity
 from app.models.cost import Cost
 from app.models.user import User
 from app.schemas.installation import InstallationCreate, InstallationRead, InstallationUpdate, InstallationDetail
+from app.services.plan_limits import check_limit
 
 router = APIRouter(prefix="/installations", tags=["Installations"])
 
@@ -71,6 +72,7 @@ async def create_installation(
     data: InstallationCreate,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
+    _limit=Depends(check_limit("installations")),
 ):
     """Create a new installation and auto-schedule first maintenance."""
     installation = Installation(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user["id"])

@@ -11,16 +11,18 @@ from typing import Optional
 
 import anthropic
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.auth import get_current_user
 from app.config import get_settings
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User as UserModel
+from app.services.plan_limits import check_limit
 
 # Import the extracted tools definition and execution logic
-from app.services.agent.tool_registry import get_tools, execute_tool
+from app.services.agent.tool_registry import get_tools, execute_tool, registry, AgentTool
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +80,9 @@ class AgentResponse(BaseModel):
 @router.post("/chat", response_model=AgentResponse)
 async def chat_with_agent(
     message: AgentMessage,
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    _limit=Depends(check_limit("ai_questions")),
 ):
     """Send a message to Sol and get an AI-powered response."""
     settings = get_settings()
@@ -148,6 +151,12 @@ async def chat_with_agent(
             for block in response.content:
                 if hasattr(block, "text"):
                     text += str(block.text)
+
+            # Record usage
+            user_result = await db.execute(select(UserModel).where(UserModel.id == current_user["id"]))
+            user_obj = user_result.scalar_one()
+            user_obj.message_count += 1
+            await db.commit()
 
             return AgentResponse(
                 response=text,

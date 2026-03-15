@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { agent } from "@/services/api";
+import { agent, plan as planApi, PlanUsage } from "@/services/api";
 
 interface Message {
     id: string;
@@ -26,6 +26,7 @@ export default function AssistantPage() {
     const { user, dbUser, logout } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
+    const [usage, setUsage] = useState<PlanUsage | null>(null);
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -121,6 +122,11 @@ export default function AssistantPage() {
         ]);
     }, []);
 
+    // Fetch plan usage on mount
+    useEffect(() => {
+        planApi.usage().then(setUsage).catch(console.error);
+    }, []);
+
     // Save history to session storage when messages update
     useEffect(() => {
         if (messages.length > 0) {
@@ -145,6 +151,11 @@ export default function AssistantPage() {
         try {
             const data = await agent.chat(text, currentHistory);
 
+            // Optimistic update of AI limit counter
+            if (usage && usage.plan === 'demo') {
+                setUsage(prev => prev ? { ...prev, ai_questions: { ...prev.ai_questions, used: prev.ai_questions.used + 1 } } : prev);
+            }
+
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
@@ -167,6 +178,8 @@ export default function AssistantPage() {
     };
 
 
+
+    const limitReached = usage && usage.plan === 'demo' && usage.ai_questions.limit !== null && usage.ai_questions.used >= usage.ai_questions.limit;
 
     // ── Chat Screen ──
     return (
@@ -213,6 +226,17 @@ export default function AssistantPage() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {limitReached && (
+                    <div className="w-full bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">
+                        <span>Has alcanzado el límite de consultas de IA en el plan Demo.</span>
+                        <button 
+                            onClick={() => window.open("https://wa.me/[TU_NUMERO_AQUI]?text=Hola,%20quiero%20actualizar%20mi%20plan%20a%20Pro", "_blank")}
+                            className="text-red-700 underline font-medium"
+                        >
+                            Actualizar a Pro
+                        </button>
+                    </div>
+                )}
                 <AnimatePresence>
                     {messages.map((msg) => (
                         <motion.div
@@ -282,7 +306,10 @@ export default function AssistantPage() {
                             <button
                                 key={s}
                                 onClick={() => sendMessage(s)}
-                                className="px-3 py-1.5 rounded-lg bg-sky-50 border border-sky-100 text-xs text-sky-700 font-medium hover:bg-sky-100 hover:border-sky-200 transition-colors"
+                                disabled={limitReached || false}
+                                className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                                    limitReached ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed" : "bg-sky-50 border-sky-100 text-sky-700 hover:bg-sky-100 hover:border-sky-200"
+                                }`}
                             >
                                 {s}
                             </button>
@@ -291,8 +318,12 @@ export default function AssistantPage() {
                 </motion.div>
             )}
 
-            {/* Input */}
             <div className="shrink-0 p-4 border-t border-slate-200 bg-white/70 backdrop-blur-md">
+                {usage && usage.plan === 'demo' && (
+                    <div className="text-[10px] text-slate-500 mb-2 pl-2">
+                        {usage.ai_questions.used} / {usage.ai_questions.limit} consultas usadas
+                    </div>
+                )}
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
@@ -304,17 +335,20 @@ export default function AssistantPage() {
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder={isListening ? "Escuchando... Hablá ahora" : "Escribe tu mensaje a Sol..."}
-                        className={`flex-1 px-4 py-3 rounded-xl border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${isListening
-                            ? "bg-red-50 border-red-200 focus:border-red-300"
-                            : "bg-slate-50 border-slate-200 focus:border-sky-300"
-                            }`}
+                        disabled={limitReached || false}
+                        placeholder={limitReached ? "Actualizá a Pro para seguir usando Sol" : isListening ? "Escuchando... Hablá ahora" : "Escribe tu mensaje a Sol..."}
+                        className={`flex-1 px-4 py-3 rounded-xl border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
+                            limitReached ? "bg-slate-100 cursor-not-allowed" :
+                            isListening ? "bg-red-50 border-red-200 focus:border-red-300" : "bg-slate-50 border-slate-200 focus:border-sky-300"
+                        }`}
                     />
                     <button
                         type="button"
                         onClick={toggleListening}
+                        disabled={limitReached || false}
                         className={`px-4 py-3 rounded-xl border text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center
-                            ${isListening ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200'}
+                            ${limitReached ? "opacity-50 cursor-not-allowed bg-slate-100 border-slate-200" :
+                              isListening ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200'}
                         `}
                         title="Dictar por voz"
                     >
@@ -324,7 +358,7 @@ export default function AssistantPage() {
                     </button>
                     <button
                         type="submit"
-                        disabled={!input.trim() || isTyping}
+                        disabled={!input.trim() || isTyping || limitReached || false}
                         className="px-5 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-medium shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0"
                     >
                         Enviar

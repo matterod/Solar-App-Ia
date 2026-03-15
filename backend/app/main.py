@@ -25,6 +25,7 @@ from app.routers import (
     invitations_router,
     team_router,
     costs_router,
+    plan_router,
 )
 
 settings = get_settings()
@@ -77,6 +78,7 @@ app.include_router(problems_router, prefix=API_PREFIX)
 app.include_router(invitations_router, prefix=API_PREFIX)
 app.include_router(team_router, prefix=API_PREFIX)
 app.include_router(costs_router, prefix=API_PREFIX)
+app.include_router(plan_router, prefix=API_PREFIX)
 
 
 @app.get("/")

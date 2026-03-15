@@ -23,6 +23,8 @@ class UserRead(BaseModel):
     company_id: uuid.UUID
     company_name: Optional[str] = None
     plan: Optional[str] = None
+    is_superadmin: bool = False
+    ai_questions_used: int = 0
 
     model_config = {"from_attributes": True}
 

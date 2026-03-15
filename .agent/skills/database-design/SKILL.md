@@ -39,6 +39,10 @@ description: Solar ERP database design conventions and schema patterns
 - `ON DELETE SET NULL` for optional references (task → installation)
 - No `ON DELETE CASCADE` for users (prevent data loss)
 
+### Special Columns
+- `users.message_count`: Tracks the total number of AI questions asked by a user.
+- `users.is_superadmin`: Controls global admin access (can change plans and view global usage).
+
 ## Enum Types
 
 ```sql

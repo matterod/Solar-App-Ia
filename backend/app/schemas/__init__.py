@@ -15,3 +15,4 @@ from app.schemas.budget import BudgetCreate, BudgetRead, BudgetItemCreate, Budge
 from app.schemas.payment import PaymentCreate, PaymentRead
 from app.schemas.team import TeamMemberRead
 from app.schemas.cost import CostCreate, CostRead, CostUpdate
+from app.schemas.plan import PlanUsage, CompanyAdmin

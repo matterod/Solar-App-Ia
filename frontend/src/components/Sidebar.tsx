@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: DashboardIcon },
@@ -20,6 +21,7 @@ const navigation = [
 export default function Sidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const { dbUser } = useAuth();
 
     const navContent = (
         <>
@@ -74,6 +76,30 @@ export default function Sidebar() {
                             </li>
                         );
                     })}
+
+                    {dbUser?.is_superadmin && (
+                        <li>
+                            <Link
+                                href="/dashboard/admin"
+                                onClick={() => setMobileOpen(false)}
+                                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200
+                                ${pathname.startsWith("/dashboard/admin")
+                                    ? "bg-purple-500/15 text-purple-400"
+                                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                                }`}
+                            >
+                                {pathname.startsWith("/dashboard/admin") && (
+                                    <motion.div
+                                        layoutId="sidebar-indicator"
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-purple-400"
+                                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                    />
+                                )}
+                                <SettingsIcon className={`h-5 w-5 transition-colors ${pathname.startsWith("/dashboard/admin") ? "text-purple-400" : "text-slate-500 group-hover:text-slate-300"}`} />
+                                Super Admin
+                            </Link>
+                        </li>
+                    )}
                 </ul>
             </nav>
 
@@ -169,4 +195,7 @@ function GearIcon({ className }: { className?: string }) {
 }
 function AlertTriangleIcon({ className }: { className?: string }) {
     return (<svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>);
+}
+function SettingsIcon({ className }: { className?: string }) {
+    return (<svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" /></svg>);
 }

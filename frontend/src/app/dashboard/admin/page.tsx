@@ -1,0 +1,127 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { admin, CompanyAdmin } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+
+export default function SuperAdminPage() {
+    const { dbUser } = useAuth();
+    const router = useRouter();
+    
+    const [stats, setStats] = useState<{ total_companies: number; total_users: number; demo_count: number; pro_count: number } | null>(null);
+    const [companies, setCompanies] = useState<CompanyAdmin[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (dbUser && !dbUser.is_superadmin) {
+            router.push("/dashboard");
+            return;
+        }
+
+        if (dbUser?.is_superadmin) {
+            fetchData();
+        }
+    }, [dbUser, router]);
+
+    const fetchData = async () => {
+        try {
+            const [s, c] = await Promise.all([admin.stats(), admin.companies()]);
+            setStats(s);
+            setCompanies(c);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const togglePlan = async (company: CompanyAdmin) => {
+        try {
+            const newPlan = company.plan === "demo" ? "pro" : "demo";
+            await admin.changePlan(company.id, newPlan);
+            fetchData();
+        } catch (error) {
+            alert("Error cambiando plan");
+        }
+    };
+
+    if (isLoading) {
+        return <div className="p-8 text-slate-500">Cargando panel de administración...</div>;
+    }
+
+    return (
+        <div className="p-4 md:p-6 lg:p-8 max-w-6xl">
+            <div className="mb-8">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Panel de SuperAdmin</h1>
+                <p className="text-sm text-slate-500 mt-1">Gestión global de empresas y usuarios</p>
+            </div>
+
+            {stats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    {[
+                        { label: "Empresas Totales", value: stats.total_companies, color: "text-sky-600" },
+                        { label: "Usuarios Totales", value: stats.total_users, color: "text-emerald-600" },
+                        { label: "Planes Demo", value: stats.demo_count, color: "text-indigo-600" },
+                        { label: "Planes Pro", value: stats.pro_count, color: "text-purple-600" },
+                    ].map((s, i) => (
+                        <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                            <p className="text-sm text-slate-500 font-medium mb-1">{s.label}</p>
+                            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-900 mb-4">Empresas Registradas</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead>
+                            <tr className="text-slate-500 border-b border-slate-100">
+                                <th className="pb-3 font-medium">Empresa</th>
+                                <th className="pb-3 font-medium">Usuarios</th>
+                                <th className="pb-3 font-medium">Estado</th>
+                                <th className="pb-3 font-medium w-[100px]">Plan</th>
+                                <th className="pb-3 font-medium text-right w-[150px]">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                            {companies.map((company) => (
+                                <tr key={company.id} className="hover:bg-slate-50/50 transition-colors h-16">
+                                    <td className="py-4 font-medium text-slate-900">{company.name}</td>
+                                    <td className="py-4 text-slate-600">{company.user_count}</td>
+                                    <td className="py-4">
+                                        <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider ${
+                                            company.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                        }`}>
+                                            {company.subscription_status}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 w-[100px]">
+                                        <div className="flex items-center h-full">
+                                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider text-center min-w-[55px] ${
+                                                company.plan === 'pro' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                                {company.plan}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 text-right w-[150px]">
+                                        <button
+                                            onClick={() => togglePlan(company)}
+                                            className="text-xs font-medium text-sky-600 hover:text-sky-700 hover:underline whitespace-nowrap"
+                                        >
+                                            Cambiar a {company.plan === 'demo' ? 'Pro' : 'Demo'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}

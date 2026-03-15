@@ -16,3 +16,4 @@ from app.routers.problems import router as problems_router
 from app.routers.invitations import router as invitations_router
 from app.routers.team import router as team_router
 from app.routers.costs import router as costs_router
+from app.routers.plan import router as plan_router

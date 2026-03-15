@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { auth, invitations, Invitation, team, TeamMember } from "@/services/api";
+import { auth, invitations, Invitation, team, TeamMember, plan as planApi, PlanUsage } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function SettingsPage() {
@@ -12,12 +12,14 @@ export default function SettingsPage() {
     const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteCategory, setInviteCategory] = useState("installer");
+    const [usage, setUsage] = useState<PlanUsage | null>(null);
 
     useEffect(() => {
         auth.getMe().then(u => {
             setUser(u);
             if (u) {
                 fetchTeam();
+                planApi.usage().then(setUsage).catch(console.error);
                 if (u.role === 'admin' || u.role === 'partner') {
                     fetchInvitations();
                 }
@@ -84,18 +86,60 @@ export default function SettingsPage() {
                                     <span className="text-sm font-medium text-slate-900 capitalize">{user.company_name}</span>
                                 </div>
                             )}
-                            {user.plan && (
-                                <div className="flex items-center justify-between py-2 border-t border-slate-100">
-                                    <span className="text-sm text-slate-500">Plan</span>
-                                    <span className="text-sm font-medium text-slate-900 capitalize">{user.plan}</span>
-                                </div>
-                            )}
                             <div className="flex items-center justify-between py-2 border-t border-slate-100">
                                 <span className="text-sm text-slate-500">API Backend</span>
                                 <span className="text-sm font-medium text-emerald-600">Conectado ✓</span>
                             </div>
                         </div>
                     </div>
+
+                    {usage && (
+                        <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-semibold text-slate-900">Tu Plan</h2>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${usage.plan === 'pro' ? 'bg-gradient-to-r from-sky-400 to-sky-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                    {usage.plan}
+                                </span>
+                            </div>
+
+                            <div className="space-y-4">
+                                {[
+                                    { label: "Consultas de IA", data: usage.ai_questions },
+                                    { label: "Clientes", data: usage.clients },
+                                    { label: "Instalaciones", data: usage.installations },
+                                    { label: "Miembros del Equipo", data: usage.team_members },
+                                ].map((item, i) => (
+                                    <div key={i}>
+                                        <div className="flex justify-between text-sm mb-1.5">
+                                            <span className="text-slate-600 font-medium">{item.label}</span>
+                                            <span className="text-slate-900">
+                                                {item.data.limit === null ? "Ilimitado" : `${item.data.used} / ${item.data.limit}`}
+                                            </span>
+                                        </div>
+                                        {item.data.limit !== null && (
+                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full transition-all duration-500 ${item.data.used >= item.data.limit ? 'bg-red-500' : 'bg-sky-500'}`}
+                                                    style={{ width: `${Math.min((item.data.used / item.data.limit) * 100, 100)}%` }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {usage.plan === 'demo' && (
+                                <div className="mt-6">
+                                    <button 
+                                        onClick={() => window.open("https://wa.me/[TU_NUMERO_AQUI]?text=Hola,%20quiero%20actualizar%20mi%20plan%20a%20Pro", "_blank")}
+                                        className="w-full py-2.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity"
+                                    >
+                                        Actualizar a Pro ⚡
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {(user.role === 'admin' || user.role === 'partner') && (
                         <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-6">
