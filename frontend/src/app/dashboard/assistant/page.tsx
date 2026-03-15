@@ -183,23 +183,23 @@ export default function AssistantPage() {
 
     // ── Chat Screen ──
     return (
-        <div className="flex flex-col h-[calc(100vh-0px)]">
+        <div className="-mt-14 md:mt-0 flex flex-col h-screen">
             {/* Header */}
-            <div className="shrink-0 px-6 py-4 border-b border-slate-200 bg-white/70 backdrop-blur-md">
+            <div className="shrink-0 pl-14 pr-3 md:px-6 py-0 md:py-4 h-14 md:h-auto flex items-center border-b border-slate-200 bg-white/90 backdrop-blur-md z-10">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-md shadow-sky-500/20">
-                            <span className="text-lg">☀️</span>
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-md shadow-sky-500/20 shrink-0">
+                            <span className="text-base sm:text-lg">☀️</span>
                         </div>
-                        <div>
-                            <h1 className="text-base font-semibold text-slate-900">Asistente Sol</h1>
-                            <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <div className="min-w-0">
+                            <h1 className="text-sm sm:text-base font-semibold text-slate-900">Asistente Sol</h1>
+                            <p className="text-[10px] sm:text-xs text-slate-500 flex items-center gap-1.5">
                                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 En línea · Claude AI
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <button
                             onClick={() => {
                                 sessionStorage.removeItem("solar_chat_history");
@@ -210,13 +210,13 @@ export default function AssistantPage() {
                                     timestamp: new Date(),
                                 }]);
                             }}
-                            className="text-xs text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition-colors font-medium border border-sky-100"
+                            className="text-[10px] sm:text-xs text-sky-600 hover:text-sky-700 bg-sky-50 hover:bg-sky-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg transition-colors font-medium border border-sky-100"
                         >
                             Nueva Conversación
                         </button>
                         <button
                             onClick={logout}
-                            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                            className="text-[10px] sm:text-xs text-slate-400 hover:text-slate-600 transition-colors hidden sm:block"
                         >
                             Cerrar Sesión
                         </button>
@@ -225,7 +225,7 @@ export default function AssistantPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
                 {limitReached && (
                     <div className="w-full bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">
                         <span>Has alcanzado el límite de consultas de IA en el plan Demo.</span>
@@ -247,7 +247,7 @@ export default function AssistantPage() {
                             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                         >
                             <div
-                                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed
+                                className={`max-w-[90%] sm:max-w-[75%] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm leading-relaxed
                   ${msg.role === "user"
                                         ? "bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-md shadow-sky-500/15"
                                         : "bg-white border border-slate-100 text-slate-700 shadow-sm"
@@ -299,7 +299,7 @@ export default function AssistantPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="shrink-0 px-6 pb-3"
+                    className="shrink-0 px-3 sm:px-6 pb-3"
                 >
                     <div className="flex flex-wrap gap-2">
                         {suggestions.map((s) => (
@@ -318,7 +318,7 @@ export default function AssistantPage() {
                 </motion.div>
             )}
 
-            <div className="shrink-0 p-4 border-t border-slate-200 bg-white/70 backdrop-blur-md">
+            <div className="shrink-0 p-2.5 sm:p-4 border-t border-slate-200 bg-white/70 backdrop-blur-md">
                 {usage && usage.plan === 'demo' && (
                     <div className="text-[10px] text-slate-500 mb-2 pl-2">
                         {usage.ai_questions.used} / {usage.ai_questions.limit} consultas usadas
@@ -329,7 +329,7 @@ export default function AssistantPage() {
                         e.preventDefault();
                         sendMessage(input);
                     }}
-                    className="flex gap-3"
+                    className="flex gap-2 sm:gap-3"
                 >
                     <input
                         type="text"
@@ -337,7 +337,7 @@ export default function AssistantPage() {
                         onChange={(e) => setInput(e.target.value)}
                         disabled={limitReached || false}
                         placeholder={limitReached ? "Actualizá a Pro para seguir usando Sol" : isListening ? "Escuchando... Hablá ahora" : "Escribe tu mensaje a Sol..."}
-                        className={`flex-1 px-4 py-3 rounded-xl border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
+                        className={`flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
                             limitReached ? "bg-slate-100 cursor-not-allowed" :
                             isListening ? "bg-red-50 border-red-200 focus:border-red-300" : "bg-slate-50 border-slate-200 focus:border-sky-300"
                         }`}
@@ -346,7 +346,7 @@ export default function AssistantPage() {
                         type="button"
                         onClick={toggleListening}
                         disabled={limitReached || false}
-                        className={`px-4 py-3 rounded-xl border text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center
+                        className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center
                             ${limitReached ? "opacity-50 cursor-not-allowed bg-slate-100 border-slate-200" :
                               isListening ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200'}
                         `}
@@ -359,7 +359,7 @@ export default function AssistantPage() {
                     <button
                         type="submit"
                         disabled={!input.trim() || isTyping || limitReached || false}
-                        className="px-5 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-medium shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0"
+                        className="px-3 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white text-xs sm:text-sm font-medium shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-sky-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 disabled:hover:translate-y-0"
                     >
                         Enviar
                     </button>

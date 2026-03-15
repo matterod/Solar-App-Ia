@@ -39,6 +39,7 @@ export default function InstallationsPage() {
         cost_date: new Date().toISOString().split("T")[0],
     });
     const [addingCost, setAddingCost] = useState(false);
+    const [showCostForm, setShowCostForm] = useState(false);
 
     const isFirstMount = useRef(true);
 
@@ -301,41 +302,41 @@ export default function InstallationsPage() {
                     <>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedInst(null)} className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm" />
                         <motion.div initial={{ opacity: 0, x: "100%" }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 right-0 z-[70] w-full max-w-2xl bg-white shadow-2xl flex flex-col">
-                            
+                            className="fixed inset-0 sm:inset-y-0 sm:left-auto sm:right-0 z-[70] w-full sm:max-w-2xl bg-white shadow-2xl flex flex-col">
+
                             {/* Modal Header */}
-                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-sky-50 to-white">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <h2 className="text-xl font-bold text-slate-900">{selectedInst.location_name}</h2>
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusLabels[selectedInst.status]?.color || ""}`}>
+                            <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-sky-50 to-white">
+                                <div className="min-w-0 flex-1 mr-3">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                        <h2 className="text-base sm:text-xl font-bold text-slate-900 truncate">{selectedInst.location_name}</h2>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${statusLabels[selectedInst.status]?.color || ""}`}>
                                             {statusLabels[selectedInst.status]?.label || selectedInst.status}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-slate-500">📍 {selectedInst.address}, {selectedInst.city}</p>
+                                    <p className="text-xs sm:text-sm text-slate-500 truncate">📍 {selectedInst.address}, {selectedInst.city}</p>
                                 </div>
-                                <button onClick={() => setSelectedInst(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                <button onClick={() => setSelectedInst(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 shrink-0">
+                                    <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
 
                             {/* Tabs */}
-                            <div className="flex px-6 border-b border-slate-100 gap-6 overflow-x-auto no-scrollbar">
+                            <div className="flex px-3 sm:px-6 border-b border-slate-100 gap-3 sm:gap-6 overflow-x-auto no-scrollbar">
                                 {[
-                                    { id: "info", label: "Información", icon: "📋" },
-                                    { id: "costs", label: "Costos e Insumos", icon: "💰" },
-                                    { id: "activities", label: "Actividades", icon: "🏗️" },
-                                    { id: "maintenance", label: "Mantenimiento", icon: "🔧" }
+                                    { id: "info", label: "Info", fullLabel: "Información", icon: "📋" },
+                                    { id: "costs", label: "Costos", fullLabel: "Costos e Insumos", icon: "💰" },
+                                    { id: "activities", label: "Actividades", fullLabel: "Actividades", icon: "🏗️" },
+                                    { id: "maintenance", label: "Mant.", fullLabel: "Mantenimiento", icon: "🔧" }
                                 ].map(tab => (
                                     <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-                                        className={`py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all flex items-center gap-2 ${activeTab === tab.id ? "border-sky-500 text-sky-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}>
-                                        <span className="text-base">{tab.icon}</span> {tab.label}
+                                        className={`py-3 sm:py-4 text-xs sm:text-sm font-medium whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 sm:gap-2 ${activeTab === tab.id ? "border-sky-500 text-sky-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}>
+                                        <span className="text-sm sm:text-base">{tab.icon}</span> <span className="sm:hidden">{tab.label}</span><span className="hidden sm:inline">{tab.fullLabel}</span>
                                     </button>
                                 ))}
                             </div>
 
                             {/* Modal Content */}
-                            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/30">
                                 {activeTab === "info" && (
                                     <div className="space-y-6">
                                         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
@@ -359,7 +360,7 @@ export default function InstallationsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         {selectedInst.description && (
                                             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
                                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Notas / Descripción</h3>
@@ -372,63 +373,14 @@ export default function InstallationsPage() {
                                 {activeTab === "costs" && (
                                     <div className="space-y-6">
                                         {/* Total Summary */}
-                                        <div className="bg-sky-600 rounded-2xl p-6 text-white shadow-lg shadow-sky-600/20 flex items-center justify-between">
+                                        <div className="bg-sky-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg shadow-sky-600/20 flex items-center justify-between">
                                             <div>
-                                                <p className="text-sky-100 text-sm font-medium mb-1">Gasto Total Acumulado</p>
-                                                <h3 className="text-3xl font-bold">
+                                                <p className="text-sky-100 text-xs sm:text-sm font-medium mb-1">Gasto Total Acumulado</p>
+                                                <h3 className="text-xl sm:text-3xl font-bold">
                                                     ${selectedInst.costs.reduce((acc, c) => acc + (c.amount * c.quantity), 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                                                 </h3>
                                             </div>
                                             <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">💵</div>
-                                        </div>
-
-                                        {/* Add Cost Form */}
-                                        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                                            <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                                <span className="text-sky-500 text-xl">+</span> Registrar Gasto
-                                            </h3>
-                                            <form onSubmit={handleAddCost} className="grid grid-cols-2 gap-4">
-                                                <div className="col-span-2 sm:col-span-1">
-                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
-                                                    <select value={costForm.cost_type} onChange={(e) => setCostForm({ ...costForm, cost_type: e.target.value })}
-                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
-                                                        <option value="food">🍱 Comida / Viáticos</option>
-                                                        <option value="materials">🔩 Materiales / Stock</option>
-                                                        <option value="vehicle">🚗 Combustible / Vehículo</option>
-                                                        <option value="lodging">🏨 Alojamiento</option>
-                                                        <option value="other">📦 Otros</option>
-                                                    </select>
-                                                </div>
-                                                <div className="col-span-2 sm:col-span-1">
-                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha</label>
-                                                    <input type="date" value={costForm.cost_date} onChange={(e) => setCostForm({ ...costForm, cost_date: e.target.value })}
-                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
-                                                </div>
-                                                <div className="col-span-2 sm:col-span-1">
-                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Monto (Unitario)</label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-2 text-slate-400 text-sm">$</span>
-                                                        <input type="number" step="0.01" required value={costForm.amount} onChange={(e) => setCostForm({ ...costForm, amount: e.target.value })}
-                                                            className="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" placeholder="0.00" />
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-2 sm:col-span-1">
-                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cantidad</label>
-                                                    <input type="number" min="1" value={costForm.quantity} onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })}
-                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descripción</label>
-                                                    <input value={costForm.description} onChange={(e) => setCostForm({ ...costForm, description: e.target.value })}
-                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" placeholder="Ej: Tornillería extra, almuerzo equipo..." />
-                                                </div>
-                                                <div className="col-span-2 flex justify-end">
-                                                    <button type="submit" disabled={addingCost}
-                                                        className="px-4 py-2 rounded-xl bg-sky-500 text-white text-sm font-bold shadow-md shadow-sky-500/20 hover:bg-sky-400 disabled:opacity-50 transition-all">
-                                                        {addingCost ? "Guardando..." : "Agregar Gasto"}
-                                                    </button>
-                                                </div>
-                                            </form>
                                         </div>
 
                                         {/* Costs List */}
@@ -438,19 +390,20 @@ export default function InstallationsPage() {
                                             </div>
                                             {selectedInst.costs.length === 0 ? (
                                                 <div className="p-8 text-center">
-                                                    <p className="text-sm text-slate-400 italic">No hay gastos registrados para esta obra.</p>
+                                                    <p className="text-sm text-slate-400 italic">No hay gastos registrados aún.</p>
+                                                    <p className="text-xs text-slate-400 mt-1">Podés agregar gastos desde el <strong>Asistente IA</strong> o manualmente abajo.</p>
                                                 </div>
                                             ) : (
                                                 <div className="divide-y divide-slate-50">
                                                     {selectedInst.costs.map(cost => (
-                                                        <div key={cost.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-lg grayscale group-hover:grayscale-0 transition-all">
+                                                        <div key={cost.id} className="p-3 sm:p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 group">
+                                                            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                                                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-slate-100 flex items-center justify-center text-base sm:text-lg grayscale group-hover:grayscale-0 transition-all shrink-0">
                                                                     {cost.cost_type === "food" ? "🍱" : cost.cost_type === "materials" ? "🔩" : cost.cost_type === "vehicle" ? "⛽" : cost.cost_type === "lodging" ? "🏨" : "📦"}
                                                                 </div>
-                                                                <div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <p className="text-sm font-semibold text-slate-900">{cost.description || (cost.cost_type.charAt(0).toUpperCase() + cost.cost_type.slice(1))}</p>
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <p className="text-sm font-semibold text-slate-900 truncate">{cost.description || (cost.cost_type.charAt(0).toUpperCase() + cost.cost_type.slice(1))}</p>
                                                                         <span className="text-[10px] text-slate-400 font-medium">{new Date(cost.cost_date).toLocaleDateString("es-AR")}</span>
                                                                     </div>
                                                                     <p className="text-xs text-slate-500">
@@ -458,11 +411,11 @@ export default function InstallationsPage() {
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-3 sm:gap-4 self-end sm:self-auto">
                                                                 <p className="text-sm font-bold text-slate-900">
                                                                     ${(cost.amount * cost.quantity).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                                                                 </p>
-                                                                <button onClick={() => handleDeleteCost(cost.id)} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-slate-300">
+                                                                <button onClick={() => handleDeleteCost(cost.id)} className="sm:opacity-0 sm:group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-slate-300">
                                                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                                 </button>
                                                             </div>
@@ -471,6 +424,81 @@ export default function InstallationsPage() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Add Cost Toggle + Form */}
+                                        {!showCostForm ? (
+                                            <button
+                                                onClick={() => setShowCostForm(true)}
+                                                className="w-full py-3 rounded-2xl border-2 border-dashed border-slate-200 text-sm font-medium text-slate-500 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/50 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                                Agregar Gasto Manualmente
+                                            </button>
+                                        ) : (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm"
+                                            >
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                        <span className="text-sky-500 text-xl">+</span> Registrar Gasto
+                                                    </h3>
+                                                    <button
+                                                        onClick={() => setShowCostForm(false)}
+                                                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors p-1"
+                                                    >
+                                                        ✕ Cerrar
+                                                    </button>
+                                                </div>
+                                                <form onSubmit={handleAddCost} className="grid grid-cols-2 gap-4">
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                                        <select value={costForm.cost_type} onChange={(e) => setCostForm({ ...costForm, cost_type: e.target.value })}
+                                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
+                                                            <option value="food">🍱 Comida / Viáticos</option>
+                                                            <option value="materials">🔩 Materiales / Stock</option>
+                                                            <option value="vehicle">🚗 Combustible / Vehículo</option>
+                                                            <option value="lodging">🏨 Alojamiento</option>
+                                                            <option value="other">📦 Otros</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha</label>
+                                                        <input type="date" value={costForm.cost_date} onChange={(e) => setCostForm({ ...costForm, cost_date: e.target.value })}
+                                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Monto (Unitario)</label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-3 top-2 text-slate-400 text-sm">$</span>
+                                                            <input type="number" step="0.01" required value={costForm.amount} onChange={(e) => setCostForm({ ...costForm, amount: e.target.value })}
+                                                                className="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" placeholder="0.00" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cantidad</label>
+                                                        <input type="number" min="1" value={costForm.quantity} onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })}
+                                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descripción</label>
+                                                        <input value={costForm.description} onChange={(e) => setCostForm({ ...costForm, description: e.target.value })}
+                                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" placeholder="Ej: Tornillería extra, almuerzo equipo..." />
+                                                    </div>
+                                                    <div className="col-span-2 flex justify-end gap-2">
+                                                        <button type="button" onClick={() => setShowCostForm(false)}
+                                                            className="px-4 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-100 transition-all">
+                                                            Cancelar
+                                                        </button>
+                                                        <button type="submit" disabled={addingCost}
+                                                            className="px-4 py-2 rounded-xl bg-sky-500 text-white text-sm font-bold shadow-md shadow-sky-500/20 hover:bg-sky-400 disabled:opacity-50 transition-all">
+                                                            {addingCost ? "Guardando..." : "Agregar Gasto"}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </motion.div>
+                                        )}
                                     </div>
                                 )}
 

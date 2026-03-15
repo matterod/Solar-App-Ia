@@ -353,12 +353,10 @@ CRUD_TOOLS = [
                     "type": "object", 
                     "description": "Filtros de búsqueda (ej. {'status': 'pending'} o {'name': '%Juan%'}). Usar % para comodines en strings. NO incluir company_id, se filtra automáticamente."
                 },
-                "limit": {
-                    "type": "integer",
-                    "description": "Cantidad de resultados (default 10, máximo 50)"
-                }
+                "limit": {"type": "integer", "description": "Máximo de registros a retornar (default: 50)."},
+                "order_by": {"type": "string", "description": "Campo por el cual ordenar los resultados (ej. 'created_at')."}
             },
             "required": ["model"]
         }
-    }
+    },
 ]

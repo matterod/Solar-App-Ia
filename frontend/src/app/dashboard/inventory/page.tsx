@@ -93,68 +93,115 @@ export default function InventoryPage() {
                     )}
                 </motion.div>
             ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-                                <tr>
-                                    <th className="font-semibold py-4 px-6 font-medium">Producto</th>
-                                    <th className="font-semibold py-4 px-6 font-medium">Categoría</th>
-                                    <th className="font-semibold py-4 px-6 font-medium">Precio Unit.</th>
-                                    <th className="font-semibold py-4 px-6 font-medium text-right">Stock</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {data.map((p, i) => {
-                                    const isLow = p.current_stock <= p.min_stock;
-                                    return (
-                                        <motion.tr
-                                            key={p.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: i * 0.03 }}
-                                            className={`hover:bg-slate-50 transition-colors ${isLow ? "bg-orange-50/30" : ""}`}
-                                        >
-                                            <td className="py-4 px-6">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${isLow ? 'bg-orange-500' : 'bg-emerald-500'}`} />
-                                                    <div>
-                                                        <p className="font-semibold text-slate-900">{p.name}</p>
-                                                        {p.sku && <p className="text-xs text-slate-500 mt-0.5">SKU: {p.sku}</p>}
+                <div>
+                    {/* Mobile: Card layout */}
+                    <div className="md:hidden space-y-3">
+                        {data.map((p, i) => {
+                            const isLow = p.current_stock <= p.min_stock;
+                            return (
+                                <motion.div
+                                    key={p.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.03 }}
+                                    className={`bg-white rounded-2xl p-4 border transition-all ${isLow ? "border-orange-200 bg-orange-50/30" : "border-slate-100"}`}
+                                >
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className={`w-2 h-2 rounded-full shrink-0 ${isLow ? 'bg-orange-500' : 'bg-emerald-500'}`} />
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-slate-900 text-sm truncate">{p.name}</p>
+                                                {p.sku && <p className="text-[10px] text-slate-500">SKU: {p.sku}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="text-right shrink-0 ml-2">
+                                            <span className={`text-base font-bold ${isLow ? 'text-orange-600' : 'text-slate-900'}`}>
+                                                {p.current_stock}
+                                            </span>
+                                            <span className="text-xs text-slate-500 ml-1">{p.unit}</span>
+                                            <div className="text-[10px] text-slate-400">Mín: {p.min_stock}</div>
+                                            {isLow && <span className="text-[10px] text-orange-600 font-semibold">Stock Bajo</span>}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {p.category && (
+                                            <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-600">
+                                                {p.category}
+                                            </span>
+                                        )}
+                                        {p.unit_cost && (
+                                            <span className="text-xs text-slate-500">${p.unit_cost.toLocaleString()}</span>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Desktop: Table layout */}
+                    <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
+                                    <tr>
+                                        <th className="font-semibold py-4 px-6 font-medium">Producto</th>
+                                        <th className="font-semibold py-4 px-6 font-medium">Categoría</th>
+                                        <th className="font-semibold py-4 px-6 font-medium">Precio Unit.</th>
+                                        <th className="font-semibold py-4 px-6 font-medium text-right">Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {data.map((p, i) => {
+                                        const isLow = p.current_stock <= p.min_stock;
+                                        return (
+                                            <motion.tr
+                                                key={p.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: i * 0.03 }}
+                                                className={`hover:bg-slate-50 transition-colors ${isLow ? "bg-orange-50/30" : ""}`}
+                                            >
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-2 h-2 rounded-full ${isLow ? 'bg-orange-500' : 'bg-emerald-500'}`} />
+                                                        <div>
+                                                            <p className="font-semibold text-slate-900">{p.name}</p>
+                                                            {p.sku && <p className="text-xs text-slate-500 mt-0.5">SKU: {p.sku}</p>}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6">
-                                                {p.category ? (
-                                                    <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
-                                                        {p.category}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-slate-400 text-xs">-</span>
-                                                )}
-                                            </td>
-                                            <td className="py-4 px-6 text-slate-600">
-                                                {p.unit_cost ? `$${p.unit_cost.toLocaleString()}` : <span className="text-slate-400">-</span>}
-                                            </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <div className="inline-flex flex-col items-end">
-                                                    <div className="flex items-baseline gap-1.5">
-                                                        <span className={`text-base font-bold ${isLow ? 'text-orange-600' : 'text-slate-900'}`}>
-                                                            {p.current_stock}
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    {p.category ? (
+                                                        <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
+                                                            {p.category}
                                                         </span>
-                                                        <span className="text-xs text-slate-500">{p.unit}</span>
+                                                    ) : (
+                                                        <span className="text-slate-400 text-xs">-</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-4 px-6 text-slate-600">
+                                                    {p.unit_cost ? `$${p.unit_cost.toLocaleString()}` : <span className="text-slate-400">-</span>}
+                                                </td>
+                                                <td className="py-4 px-6 text-right">
+                                                    <div className="inline-flex flex-col items-end">
+                                                        <div className="flex items-baseline gap-1.5">
+                                                            <span className={`text-base font-bold ${isLow ? 'text-orange-600' : 'text-slate-900'}`}>
+                                                                {p.current_stock}
+                                                            </span>
+                                                            <span className="text-xs text-slate-500">{p.unit}</span>
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-400 font-medium">
+                                                            Mín: {p.min_stock}
+                                                        </div>
+                                                        {isLow && <span className="text-[10px] text-orange-600 font-semibold mt-0.5">Stock Bajo</span>}
                                                     </div>
-                                                    <div className="text-[10px] text-slate-400 font-medium">
-                                                        Mín: {p.min_stock}
-                                                    </div>
-                                                    {isLow && <span className="text-[10px] text-orange-600 font-semibold mt-0.5">Stock Bajo</span>}
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}

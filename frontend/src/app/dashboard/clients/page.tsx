@@ -137,7 +137,7 @@ export default function ClientsPage() {
                                 </div>
                                 <button
                                     onClick={(e) => handleDelete(e, client.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all"
+                                    className="sm:opacity-0 sm:group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all"
                                     title="Eliminar"
                                 >
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
@@ -220,21 +220,21 @@ export default function ClientsPage() {
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedClient(null)} className="fixed inset-0 z-40 bg-black/50" />
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-xl z-10">
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 text-white text-lg font-bold shadow-sm">
+                                <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-xl z-10">
+                                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                        <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 text-white text-sm sm:text-lg font-bold shadow-sm shrink-0">
                                             {selectedClient.name.slice(0, 2).toUpperCase()}
                                         </div>
-                                        <div>
-                                            <h2 className="text-xl font-bold text-slate-900">{selectedClient.name}</h2>
-                                            {selectedClient.company && <p className="text-sm font-medium text-sky-600">{selectedClient.company}</p>}
+                                        <div className="min-w-0">
+                                            <h2 className="text-base sm:text-xl font-bold text-slate-900 truncate">{selectedClient.name}</h2>
+                                            {selectedClient.company && <p className="text-xs sm:text-sm font-medium text-sky-600 truncate">{selectedClient.company}</p>}
                                         </div>
                                     </div>
-                                    <button onClick={() => setSelectedClient(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors">
+                                    <button onClick={() => setSelectedClient(null)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors shrink-0">
                                         ✕
                                     </button>
                                 </div>
-                                <div className="p-6">
+                                <div className="p-4 sm:p-6">
                                     {/* Client Details */}
                                     <div className="bg-slate-50 rounded-xl p-5 mb-8">
                                         <h3 className="text-sm font-semibold text-slate-900 mb-4 uppercase tracking-wider">Detalles de Contacto</h3>

@@ -74,9 +74,41 @@ export default function SuperAdminPage() {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">Empresas Registradas</h2>
-                <div className="overflow-x-auto">
+
+                {/* Mobile: Card layout */}
+                <div className="md:hidden space-y-3">
+                    {companies.map((company) => (
+                        <div key={company.id} className="border border-slate-100 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-medium text-slate-900">{company.name}</h3>
+                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
+                                    company.plan === 'pro' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                    {company.plan}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+                                <span>👥 {company.user_count} usuarios</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                                    company.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {company.subscription_status}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => togglePlan(company)}
+                                className="text-xs font-medium text-sky-600 hover:text-sky-700"
+                            >
+                                Cambiar a {company.plan === 'demo' ? 'Pro' : 'Demo'}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Desktop: Table layout */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="text-slate-500 border-b border-slate-100">

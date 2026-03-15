@@ -206,7 +206,33 @@ export default function SettingsPage() {
                         className="bg-white rounded-2xl p-6 border border-slate-100 mb-6"
                     >
                         <h2 className="text-base font-semibold text-slate-900 mb-4">Tu Equipo</h2>
-                        <div className="overflow-x-auto">
+                        
+                        {/* Mobile: Card layout */}
+                        <div className="md:hidden space-y-3">
+                            {teamMembers.map((member) => (
+                                <div key={member.id} className="border border-slate-100 rounded-xl p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="font-medium text-slate-900 text-sm">{member.full_name}</p>
+                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider ${member.is_active
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : "bg-red-100 text-red-700"
+                                        }`}>
+                                            {member.is_active ? "Activo" : "Inactivo"}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-1">{member.email}</p>
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-semibold uppercase tracking-wider">
+                                        {member.role === 'admin' ? 'Administrador' :
+                                            member.role === 'partner' ? 'Socio' :
+                                                member.role === 'installer' ? 'Instalador' :
+                                                    member.role === 'accountant' ? 'Contador' : member.role}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop: Table layout */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead>
                                     <tr className="text-slate-500 border-b border-slate-100">
