@@ -48,6 +48,7 @@ class Installation(Base):
     budgets = relationship("Budget", back_populates="installation", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="installation", cascade="all, delete-orphan")
     maintenance_records = relationship("Maintenance", back_populates="installation", cascade="all, delete-orphan")
+    costs = relationship("Cost", back_populates="installation", cascade="all, delete-orphan")
     
     assigned_installer = relationship("User", back_populates="installations", foreign_keys="[Installation.assigned_to]")
     creator = relationship("User", back_populates="created_installations", foreign_keys="[Installation.created_by]")

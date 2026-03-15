@@ -134,7 +134,7 @@ async def chat_with_agent(
                 if block.type == "tool_use":
                     logger.info(f"Agent tool call: {block.name}({block.input})")
                     tool_calls_log.append({"tool": block.name, "input": block.input})
-                    result = await execute_tool(block.name, block.input, db)
+                    result = await execute_tool(block.name, block.input, db, user=current_user)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.schemas.activity import ActivityRead
 from app.schemas.maintenance import MaintenanceRead
+from app.schemas.cost import CostRead
 
 
 class InstallationCreate(BaseModel):
@@ -72,5 +73,6 @@ class InstallationDetail(InstallationRead):
     """Extended installation with nested related data."""
     activities: List[ActivityRead] = []
     maintenance_records: List[MaintenanceRead] = []
+    costs: List[CostRead] = []
 
     model_config = {"from_attributes": True}

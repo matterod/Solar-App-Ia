@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { installations, Installation, clients, Client } from "@/services/api";
+import { installations, Installation, clients, Client, costs, Cost, InstallationDetail } from "@/services/api";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
     pending: { label: "Pendiente", color: "bg-slate-100 text-slate-600" },
@@ -24,6 +24,21 @@ export default function InstallationsPage() {
         panel_count: "0", panel_model: "", inverter_model: "", inverter_count: "1",
         system_power_kw: "", installation_date: "", status: "pending", description: "",
     });
+
+    // Detail Modal State
+    const [selectedInst, setSelectedInst] = useState<InstallationDetail | null>(null);
+    const [activeTab, setActiveTab] = useState<"info" | "costs" | "activities" | "maintenance">("info");
+    const [loadingDetail, setLoadingDetail] = useState(false);
+
+    // Cost Form State
+    const [costForm, setCostForm] = useState({
+        cost_type: "materials",
+        amount: "",
+        quantity: "1",
+        description: "",
+        cost_date: new Date().toISOString().split("T")[0],
+    });
+    const [addingCost, setAddingCost] = useState(false);
 
     const load = () => {
         setLoading(true);
@@ -54,6 +69,65 @@ export default function InstallationsPage() {
             load();
         } catch { /* */ }
         setSaving(false);
+    };
+
+    const openDetail = async (instId: string) => {
+        setLoadingDetail(true);
+        setActiveTab("info");
+        try {
+            const detail = await installations.get(instId);
+            setSelectedInst(detail);
+        } catch (err) {
+            console.error("Error loading detail:", err);
+        } finally {
+            setLoadingDetail(false);
+        }
+    };
+
+    const handleAddCost = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedInst) return;
+        setAddingCost(true);
+        try {
+            const newCost = await costs.create({
+                installation_id: selectedInst.id,
+                cost_type: costForm.cost_type,
+                amount: parseFloat(costForm.amount),
+                quantity: parseInt(costForm.quantity) || 1,
+                description: costForm.description,
+                cost_date: costForm.cost_date,
+            });
+            setSelectedInst({
+                ...selectedInst,
+                costs: [newCost, ...selectedInst.costs]
+            });
+            setCostForm({
+                cost_type: "materials",
+                amount: "",
+                quantity: "1",
+                description: "",
+                cost_date: new Date().toISOString().split("T")[0],
+            });
+        } catch (err) {
+            console.error("Error adding cost:", err);
+        } finally {
+            setAddingCost(false);
+        }
+    };
+
+    const handleDeleteCost = async (costId: string) => {
+        if (!confirm("¿Eliminar este gasto?")) return;
+        try {
+            await costs.delete(costId);
+            if (selectedInst) {
+                setSelectedInst({
+                    ...selectedInst,
+                    costs: selectedInst.costs.filter(c => c.id !== costId)
+                });
+            }
+        } catch (err) {
+            console.error("Error deleting cost:", err);
+        }
     };
 
     return (
@@ -113,7 +187,8 @@ export default function InstallationsPage() {
                         const clientInfo = clientList.find(c => c.id === inst.client_id);
                         return (
                             <motion.div key={inst.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                                className="bg-white rounded-2xl p-5 border border-slate-100 hover:border-slate-200 hover:shadow-lg transition-all flex flex-col justify-between">
+                                onClick={() => openDetail(inst.id)}
+                                className="bg-white rounded-2xl p-5 border border-slate-100 hover:border-sky-200 hover:shadow-xl hover:shadow-sky-500/5 transition-all flex flex-col justify-between cursor-pointer group">
                                 <div>
                                     <div className="flex items-start justify-between mb-1">
                                         <h3 className="font-semibold text-slate-900">{inst.location_name}</h3>
@@ -206,6 +281,233 @@ export default function InstallationsPage() {
                                         <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 disabled:opacity-50">{saving ? "Guardando..." : "Crear Instalación"}</button>
                                     </div>
                                 </form>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Detail Modal */}
+            <AnimatePresence>
+                {selectedInst && (
+                    <>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedInst(null)} className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm" />
+                        <motion.div initial={{ opacity: 0, x: "100%" }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 right-0 z-[70] w-full max-w-2xl bg-white shadow-2xl flex flex-col">
+                            
+                            {/* Modal Header */}
+                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-sky-50 to-white">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h2 className="text-xl font-bold text-slate-900">{selectedInst.location_name}</h2>
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusLabels[selectedInst.status]?.color || ""}`}>
+                                            {statusLabels[selectedInst.status]?.label || selectedInst.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-500">📍 {selectedInst.address}, {selectedInst.city}</p>
+                                </div>
+                                <button onClick={() => setSelectedInst(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+
+                            {/* Tabs */}
+                            <div className="flex px-6 border-b border-slate-100 gap-6 overflow-x-auto no-scrollbar">
+                                {[
+                                    { id: "info", label: "Información", icon: "📋" },
+                                    { id: "costs", label: "Costos e Insumos", icon: "💰" },
+                                    { id: "activities", label: "Actividades", icon: "🏗️" },
+                                    { id: "maintenance", label: "Mantenimiento", icon: "🔧" }
+                                ].map(tab => (
+                                    <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
+                                        className={`py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-all flex items-center gap-2 ${activeTab === tab.id ? "border-sky-500 text-sky-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}>
+                                        <span className="text-base">{tab.icon}</span> {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Modal Content */}
+                            <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+                                {activeTab === "info" && (
+                                    <div className="space-y-6">
+                                        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Detalles del Sistema</h3>
+                                            <div className="grid grid-cols-2 gap-y-4">
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-0.5">Potencia Instalada</p>
+                                                    <p className="font-semibold text-slate-900">{selectedInst.system_power_kw || "—"} kWp</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-0.5">Fecha de Instalación</p>
+                                                    <p className="font-semibold text-slate-900">{selectedInst.installation_date ? new Date(selectedInst.installation_date).toLocaleDateString("es-AR") : "Pendiente"}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-0.5">Paneles Solares</p>
+                                                    <p className="font-semibold text-slate-900">{selectedInst.panel_count}x {selectedInst.panel_model || "Genérico"}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-0.5">Inversor</p>
+                                                    <p className="font-semibold text-slate-900">{selectedInst.inverter_count}x {selectedInst.inverter_model || "Genérico"}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {selectedInst.description && (
+                                            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Notas / Descripción</h3>
+                                                <p className="text-sm text-slate-700 leading-relaxed italic">"{selectedInst.description}"</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === "costs" && (
+                                    <div className="space-y-6">
+                                        {/* Total Summary */}
+                                        <div className="bg-sky-600 rounded-2xl p-6 text-white shadow-lg shadow-sky-600/20 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sky-100 text-sm font-medium mb-1">Gasto Total Acumulado</p>
+                                                <h3 className="text-3xl font-bold">
+                                                    ${selectedInst.costs.reduce((acc, c) => acc + (c.amount * c.quantity), 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                                                </h3>
+                                            </div>
+                                            <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">💵</div>
+                                        </div>
+
+                                        {/* Add Cost Form */}
+                                        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                                            <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                                <span className="text-sky-500 text-xl">+</span> Registrar Gasto
+                                            </h3>
+                                            <form onSubmit={handleAddCost} className="grid grid-cols-2 gap-4">
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo</label>
+                                                    <select value={costForm.cost_type} onChange={(e) => setCostForm({ ...costForm, cost_type: e.target.value })}
+                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
+                                                        <option value="food">🍱 Comida / Viáticos</option>
+                                                        <option value="materials">🔩 Materiales / Stock</option>
+                                                        <option value="vehicle">🚗 Combustible / Vehículo</option>
+                                                        <option value="lodging">🏨 Alojamiento</option>
+                                                        <option value="other">📦 Otros</option>
+                                                    </select>
+                                                </div>
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha</label>
+                                                    <input type="date" value={costForm.cost_date} onChange={(e) => setCostForm({ ...costForm, cost_date: e.target.value })}
+                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                                                </div>
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Monto (Unitario)</label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-2 text-slate-400 text-sm">$</span>
+                                                        <input type="number" step="0.01" required value={costForm.amount} onChange={(e) => setCostForm({ ...costForm, amount: e.target.value })}
+                                                            className="w-full pl-7 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" placeholder="0.00" />
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-2 sm:col-span-1">
+                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cantidad</label>
+                                                    <input type="number" min="1" value={costForm.quantity} onChange={(e) => setCostForm({ ...costForm, quantity: e.target.value })}
+                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descripción</label>
+                                                    <input value={costForm.description} onChange={(e) => setCostForm({ ...costForm, description: e.target.value })}
+                                                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" placeholder="Ej: Tornillería extra, almuerzo equipo..." />
+                                                </div>
+                                                <div className="col-span-2 flex justify-end">
+                                                    <button type="submit" disabled={addingCost}
+                                                        className="px-4 py-2 rounded-xl bg-sky-500 text-white text-sm font-bold shadow-md shadow-sky-500/20 hover:bg-sky-400 disabled:opacity-50 transition-all">
+                                                        {addingCost ? "Guardando..." : "Agregar Gasto"}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        {/* Costs List */}
+                                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                                            <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
+                                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Historial de Gastos</h3>
+                                            </div>
+                                            {selectedInst.costs.length === 0 ? (
+                                                <div className="p-8 text-center">
+                                                    <p className="text-sm text-slate-400 italic">No hay gastos registrados para esta obra.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="divide-y divide-slate-50">
+                                                    {selectedInst.costs.map(cost => (
+                                                        <div key={cost.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-lg grayscale group-hover:grayscale-0 transition-all">
+                                                                    {cost.cost_type === "food" ? "🍱" : cost.cost_type === "materials" ? "🔩" : cost.cost_type === "vehicle" ? "⛽" : cost.cost_type === "lodging" ? "🏨" : "📦"}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <p className="text-sm font-semibold text-slate-900">{cost.description || (cost.cost_type.charAt(0).toUpperCase() + cost.cost_type.slice(1))}</p>
+                                                                        <span className="text-[10px] text-slate-400 font-medium">{new Date(cost.cost_date).toLocaleDateString("es-AR")}</span>
+                                                                    </div>
+                                                                    <p className="text-xs text-slate-500">
+                                                                        {cost.quantity > 1 ? `${cost.quantity} x $${cost.amount.toLocaleString("es-AR")}` : `$${cost.amount.toLocaleString("es-AR")}`}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <p className="text-sm font-bold text-slate-900">
+                                                                    ${(cost.amount * cost.quantity).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                                                                </p>
+                                                                <button onClick={() => handleDeleteCost(cost.id)} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-slate-300">
+                                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === "activities" && (
+                                    <div className="space-y-4">
+                                        {selectedInst.activities.length === 0 ? (
+                                            <div className="bg-white rounded-2xl p-10 border border-dotted border-slate-300 text-center">
+                                                <p className="text-slate-400 italic">No hay actividades registradas.</p>
+                                            </div>
+                                        ) : (
+                                            selectedInst.activities.map(act => (
+                                                <div key={act.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-start gap-4">
+                                                    <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs mt-1">🏗️</div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-900">{act.title}</p>
+                                                        <p className="text-xs text-slate-500 mb-2">{new Date(act.activity_date).toLocaleString("es-AR")}</p>
+                                                        {act.description && <p className="text-sm text-slate-600 leading-relaxed italic">{act.description}</p>}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === "maintenance" && (
+                                    <div className="space-y-4">
+                                        {selectedInst.maintenance_records.length === 0 ? (
+                                            <div className="bg-white rounded-2xl p-10 border border-dotted border-slate-300 text-center">
+                                                <p className="text-slate-400 italic">No hay historial de mantenimiento.</p>
+                                            </div>
+                                        ) : (
+                                            selectedInst.maintenance_records.map(r => (
+                                                <div key={r.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-start gap-4">
+                                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs mt-1 ${r.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-sky-50 text-sky-600'}`}>🔧</div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-900">{r.maintenance_type}</p>
+                                                        <p className="text-xs text-slate-500 mb-2">{new Date(r.scheduled_date).toLocaleDateString("es-AR")}</p>
+                                                        {r.description && <p className="text-sm text-slate-600 italic">"{r.description}"</p>}
+                                                        {r.status === 'completed' && <span className="mt-2 inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] uppercase font-bold tracking-wider">Completado</span>}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     </>

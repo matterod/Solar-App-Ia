@@ -81,6 +81,7 @@ export interface Installation {
 export interface InstallationDetail extends Installation {
     activities: Activity[];
     maintenance_records: Maintenance[];
+    costs: Cost[];
 }
 export const installations = {
     list: (params?: { search?: string; status?: string; client_id?: string }) => {
@@ -223,4 +224,25 @@ export interface TeamMember {
 }
 export const team = {
     list: () => request<TeamMember[]>("/team/"),
+};
+
+/* ── Costs ── */
+export interface Cost {
+    id: string;
+    company_id: string;
+    installation_id: string;
+    cost_type: string;
+    description?: string;
+    amount: number;
+    quantity: number;
+    cost_date: string;
+    created_by?: string;
+    created_at: string;
+}
+
+export const costs = {
+    list: (installation_id: string) => request<Cost[]>(`/costs/?installation_id=${installation_id}`),
+    create: (data: Omit<Cost, "id" | "company_id" | "created_by" | "created_at">) =>
+        request<Cost>("/costs/", { method: "POST", body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>(`/costs/${id}`, { method: "DELETE" }),
 };

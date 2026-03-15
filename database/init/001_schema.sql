@@ -21,6 +21,7 @@ CREATE TYPE stock_movement_type AS ENUM ('incoming', 'outgoing');
 CREATE TYPE budget_status AS ENUM ('draft', 'sent', 'approved', 'rejected');
 CREATE TYPE problem_status AS ENUM ('open', 'resolved', 'ignored');
 CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'expired');
+CREATE TYPE cost_type AS ENUM ('food', 'materials', 'vehicle', 'lodging', 'other');
 
 -- ============================================================
 -- COMPANIES (Tenants)
@@ -284,6 +285,26 @@ CREATE INDEX idx_maintenance_company ON maintenance(company_id);
 CREATE INDEX idx_maintenance_installation ON maintenance(installation_id);
 CREATE INDEX idx_maintenance_date ON maintenance(scheduled_date);
 CREATE INDEX idx_maintenance_status ON maintenance(status);
+
+-- ============================================================
+-- COSTS
+-- ============================================================
+
+CREATE TABLE costs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    installation_id UUID NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
+    cost_type cost_type NOT NULL,
+    description TEXT,
+    amount DECIMAL(12, 2) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    cost_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_costs_company ON costs(company_id);
+CREATE INDEX idx_costs_installation ON costs(installation_id);
 
 -- ============================================================
 -- PRODUCTS (Inventory)

@@ -13,6 +13,8 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models.installation import Installation
 from app.models.maintenance import Maintenance
+from app.models.activity import Activity
+from app.models.cost import Cost
 from app.models.user import User
 from app.schemas.installation import InstallationCreate, InstallationRead, InstallationUpdate, InstallationDetail
 
@@ -27,7 +29,7 @@ async def list_installations(
     search: str = None,
     client_id: uuid.UUID = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
     """List installations with filters."""
     query = select(Installation).where(Installation.company_id == current_user["company_id"]).offset(skip).limit(limit).order_by(Installation.created_at.desc())
@@ -45,7 +47,7 @@ async def list_installations(
 async def get_installation(
     installation_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
     """Get installation with all related data."""
     query = (
@@ -53,6 +55,7 @@ async def get_installation(
         .options(
             selectinload(Installation.activities),
             selectinload(Installation.maintenance_records),
+            selectinload(Installation.costs),
         )
         .where(Installation.id == installation_id)
     )
@@ -67,10 +70,10 @@ async def get_installation(
 async def create_installation(
     data: InstallationCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
     """Create a new installation and auto-schedule first maintenance."""
-    installation = Installation(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user.id)
+    installation = Installation(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user["id"])
     db.add(installation)
     await db.flush()
     await db.refresh(installation)
@@ -95,7 +98,7 @@ async def update_installation(
     installation_id: uuid.UUID,
     data: InstallationUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
     """Update an installation."""
     result = await db.execute(select(Installation).where(Installation.company_id == current_user["company_id"]).where(Installation.id == installation_id))
@@ -115,7 +118,7 @@ async def update_installation(
 async def delete_installation(
     installation_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),
 ):
     """Delete an installation."""
     result = await db.execute(select(Installation).where(Installation.company_id == current_user["company_id"]).where(Installation.id == installation_id))

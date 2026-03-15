@@ -17,6 +17,7 @@ from app.models.product import Product
 from app.models.stock_movement import StockMovement
 from app.models.problem import Problem
 from app.models.solution import Solution
+from app.models.cost import Cost
 from app.models.invitation import CompanyInvitation
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "Problem",
     "Solution",
     "CompanyInvitation",
+    "Cost",
 ]

@@ -11,6 +11,7 @@ from app.services.agent.crud_tools import CRUD_TOOLS, create_record, update_reco
 from app.services.dashboard_service import GET_DASHBOARD_STATS_TOOL, get_dashboard_stats
 from app.services.inventory_service import UPDATE_STOCK_TOOL, update_stock
 from app.services.maintenance_service import SCHEDULE_MAINTENANCE_TOOL, GET_UPCOMING_MAINTENANCE_TOOL, schedule_maintenance, get_upcoming_maintenance
+from app.services.cost_service import ADD_COST_TOOL, add_installation_cost
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ class ToolRegistry:
             } for t in self._tools.values()
         ]
 
-    async def execute(self, tool_name: str, tool_input: dict, db: AsyncSession) -> str:
+    async def execute(self, tool_name: str, tool_input: dict, db: AsyncSession, user: Optional[Any] = None) -> str:
         """Executes a registered tool dynamically."""
         if tool_name not in self._tools:
             err = f"Tool desconocido o no registrado: {tool_name}"
@@ -50,14 +51,17 @@ class ToolRegistry:
         
         try:
             # Check if the handler is async
+            sig = inspect.signature(handler)
+            kwargs = {"tool_input": tool_input}
+            if "db" in sig.parameters:
+                kwargs["db"] = db
+            if "user" in sig.parameters:
+                kwargs["user"] = user
+
             if inspect.iscoroutinefunction(handler):
-                if "db" in inspect.signature(handler).parameters:
-                    return await handler(tool_input, db)
-                return await handler(tool_input)
+                return await handler(**kwargs)
             else:
-                if "db" in inspect.signature(handler).parameters:
-                    return handler(tool_input, db)
-                return handler(tool_input)
+                return handler(**kwargs)
         except Exception as e:
             logger.error(f"Error executing tool {tool_name}: {e}")
             return json.dumps({"error": f"Error interno en herramienta {tool_name}: {str(e)}"}, ensure_ascii=False)
@@ -133,10 +137,18 @@ registry.register(AgentTool(
     handler=get_upcoming_maintenance
 ))
 
+registry.register(AgentTool(
+    name=ADD_COST_TOOL["name"],
+    description=ADD_COST_TOOL["description"],
+    category="costs",
+    input_schema=ADD_COST_TOOL["input_schema"],
+    handler=add_installation_cost
+))
+
 # Helper functions for the router
 def get_tools() -> List[Dict[str, Any]]:
     return registry.get_tool_schemas()
 
-async def execute_tool(tool_name: str, tool_input: dict, db: AsyncSession) -> str:
-    return await registry.execute(tool_name, tool_input, db)
+async def execute_tool(tool_name: str, tool_input: dict, db: AsyncSession, user: Optional[Any] = None) -> str:
+    return await registry.execute(tool_name, tool_input, db, user=user)
 

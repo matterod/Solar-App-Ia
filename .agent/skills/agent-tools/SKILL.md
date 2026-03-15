@@ -29,6 +29,7 @@ Las herramientas actuales están registradas de forma centralizada en `backend/a
 | `update_stock`             | Actualiza el inventario.                                                | `app.services.inventory_service`      |
 | `schedule_maintenance`     | Programa un mantenimiento.                                              | `app.services.maintenance_service`    |
 | `get_upcoming_maintenance` | Obtiene los próximos mantenimientos.                                    | `app.services.maintenance_service`    |
+| `add_installation_cost`    | Registra un gasto/costo en una obra por nombre de instalación.          | `app.services.cost_service`           |
 
 ## Tool Definition Pattern
 

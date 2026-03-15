@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 ALLOWED_TABLES = {
     "Client", "Installation", "Activity", "Maintenance", 
     "PendingTask", "Product", "StockMovement", "Budget", 
-    "BudgetItem", "Payment", "Photo", "Problem", "Solution"
+    "BudgetItem", "Payment", "Photo", "Problem", "Solution",
+    "Cost"
 }
 FORBIDDEN_COLUMNS = {"hashed_password", "security_token", "is_superuser", "is_active", "password"}
 

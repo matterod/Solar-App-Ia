@@ -54,6 +54,7 @@ CREATE TYPE subscription_plan AS ENUM ('demo', 'pro');
 CREATE TYPE subscription_status AS ENUM ('active', 'inactive', 'cancelled');
 CREATE TYPE problem_status AS ENUM ('open', 'resolved', 'ignored');
 CREATE TYPE invitation_status AS ENUM ('pending', 'accepted', 'expired');
+CREATE TYPE cost_type AS ENUM ('food', 'materials', 'vehicle', 'lodging', 'other');
 ```
 
 ## Core Relationships
@@ -66,6 +67,7 @@ clients ──< installations ──< activities
                            ──< payments
                            ──< maintenance
                            ──< stock_movements
+                           ──< costs
 
 products ──< stock_movements
 ```
