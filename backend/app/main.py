@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     # Startup
     print("☀️  Solar ERP Backend starting...")
     print(f"   Debug mode: {settings.debug}")
-    print(f"   CORS origins: {settings.cors_origins}")
+    print(f"   CORS origins: {settings.get_cors_origins()}")
     yield
     # Shutdown
     print("☀️  Solar ERP Backend shutting down...")
@@ -55,7 +55,7 @@ app = FastAPI(
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

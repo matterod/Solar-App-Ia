@@ -3,6 +3,7 @@ Solar ERP — Application Configuration
 Centralized settings using Pydantic Settings.
 """
 
+import json
 from functools import lru_cache
 from typing import List
 
@@ -25,8 +26,18 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 480  # 8 hours
     algorithm: str = "HS256"
 
-    # CORS
-    cors_origins: List[str] = ["http://localhost:3000"]
+    # CORS — stored as plain string to avoid pydantic-settings JSON parsing issues.
+    # Accepts JSON array string or comma-separated origins.
+    cors_origins: str = "http://localhost:3000"
+
+    def get_cors_origins(self) -> List[str]:
+        raw = self.cors_origins.strip()
+        if raw.startswith("["):
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError:
+                pass
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
     # S3 Storage
     s3_endpoint: str = ""
