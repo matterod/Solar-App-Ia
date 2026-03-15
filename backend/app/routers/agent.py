@@ -59,6 +59,8 @@ REGLAS DE USO DE HERRAMIENTAS (CRITICO):
 14. RELACIONES: Para saber qué instalaciones tiene un cliente específico, primero buscá su `id` en `Client` por nombre, y luego buscá en `Installation` filtrando por `client_id`.
 15. UBICACIONES: Una misma ubicación (como "La Rinconada" o un country/barrio cerrado) puede tener varias instalaciones correspondientes a distintos clientes. Para buscar por lugar o barrio, usá `search_records(model="Installation")` con el filtro `location_name` usando comodines (ej. `{"location_name": "%Rinconada%"}`).
 16. BASE DE CONOCIMIENTO (Problemas/Soluciones): Podés registrar y aprender de problemas y soluciones pasadas usando los modelos `Problem` y `Solution`. Si te piden anotar un problema, usa `create_record(model="Problem")`, y si también hay solución, agregala usando `create_record(model="Solution")` vinculada por `problem_id`. Al buscar soluciones para dar consejos, buscá en estos registros primero.
+17. MULTI-TENANT: Este sistema es multi-empresa. NUNCA proporciones ni incluyas `company_id` en los atributos al crear o buscar registros — se asigna automáticamente según tu empresa. Tampoco incluyas `created_by`, se asigna según el usuario actual.
+18. SEGURIDAD: Nunca intentes acceder, buscar, ni modificar datos de tablas internas como Company, User o CompanyInvitation.
 """
 
 # ── Request / Response Models ──
@@ -116,11 +118,14 @@ async def chat_with_agent(
 
     # Iterative tool-calling loop (max 10 iterations)
     for _ in range(10):
+        # Build dynamic system prompt with company context
+        system = SYSTEM_PROMPT + f"\n\nContexto actual: Estás asistiendo a {current_user['full_name']} de la empresa '{current_user['company_name']}'. No necesitás preguntar el company_id ni el nombre de la empresa."
+
         try:
             response = client.messages.create(
                 model="claude-haiku-4-5",
                 max_tokens=4096,
-                system=SYSTEM_PROMPT,
+                system=system,
                 tools=get_tools(),
                 messages=messages,
             )

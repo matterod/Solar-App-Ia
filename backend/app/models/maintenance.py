@@ -15,6 +15,7 @@ class Maintenance(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("installations.id", ondelete="CASCADE"), nullable=False)
+    company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     scheduled_date: Mapped[date] = mapped_column(Date, nullable=False)
     completed_date: Mapped[date | None] = mapped_column(Date)
     status: Mapped[str] = mapped_column(

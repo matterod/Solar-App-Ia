@@ -7,7 +7,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 
-from app.services.agent.schema_inspector import get_models_dict
+import app.models
+
+def get_models_dict():
+    """Returns a dictionary of model name -> SQLAlchemy model class"""
+    models = {}
+    if hasattr(app.models, '__all__'):
+        for model_name in app.models.__all__:
+            model_class = getattr(app.models, model_name)
+            models[model_name] = model_class
+    return models
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +26,7 @@ ALLOWED_TABLES = {
     "BudgetItem", "Payment", "Photo", "Problem", "Solution",
     "Cost"
 }
-FORBIDDEN_COLUMNS = {"hashed_password", "security_token", "is_superuser", "is_active", "password"}
+FORBIDDEN_COLUMNS = {"hashed_password", "security_token", "is_superuser", "is_active", "password", "company_id", "is_superadmin"}
 
 def is_valid_model(model_name: str) -> bool:
     return model_name in ALLOWED_TABLES
@@ -25,6 +34,11 @@ def is_valid_model(model_name: str) -> bool:
 def get_valid_columns(model_class: Any) -> set:
     mapper = inspect(model_class)
     return {col.name for col in mapper.columns}
+
+def _has_column(model_class: Any, column_name: str) -> bool:
+    """Check if a SQLAlchemy model has a specific column."""
+    mapper = inspect(model_class)
+    return column_name in {col.name for col in mapper.columns}
 
 def cast_value_for_column(model_class: Any, key: str, value: Any) -> Any:
     """Helper to convert generic string inputs (like dates) to Python objects expected by SQLAlchemy."""
@@ -51,7 +65,7 @@ def cast_value_for_column(model_class: Any, key: str, value: Any) -> Any:
         logger.warning(f"Could not cast {value} for column {key}: {e}")
     return value
 
-async def create_record(tool_input: dict, db: AsyncSession) -> str:
+async def create_record(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Creates a new record for any entity."""
     model_name = tool_input.get("model")
     attributes = tool_input.get("attributes", {})
@@ -74,6 +88,14 @@ async def create_record(tool_input: dict, db: AsyncSession) -> str:
             return json.dumps({"error": f"Modifying column '{key}' is forbidden."})
         safe_attributes[key] = cast_value_for_column(model_class, key, value)
 
+    # ── Tenant isolation: auto-inject company_id and created_by ──
+    if user and _has_column(model_class, "company_id"):
+        safe_attributes.pop("company_id", None)  # Strip AI-provided value
+        safe_attributes["company_id"] = user["company_id"]
+    if user and _has_column(model_class, "created_by"):
+        safe_attributes.pop("created_by", None)
+        safe_attributes["created_by"] = user["id"]
+
     try:
         new_record = model_class(**safe_attributes)
         db.add(new_record)
@@ -93,7 +115,7 @@ async def create_record(tool_input: dict, db: AsyncSession) -> str:
         return json.dumps({"error": f"Error creando el registro: {str(e)}"}, ensure_ascii=False)
 
 
-async def update_record(tool_input: dict, db: AsyncSession) -> str:
+async def update_record(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Updates an existing record based on filters."""
     model_name = tool_input.get("model")
     filters = tool_input.get("filters", {})
@@ -123,6 +145,10 @@ async def update_record(tool_input: dict, db: AsyncSession) -> str:
     
     try:
         query = select(model_class)
+        # ── Tenant isolation: scope query to company ──
+        if user and _has_column(model_class, "company_id"):
+            query = query.where(getattr(model_class, "company_id") == user["company_id"])
+
         for k, v in filters.items():
             if hasattr(model_class, k):
                 casted_v = cast_value_for_column(model_class, k, v)
@@ -134,6 +160,11 @@ async def update_record(tool_input: dict, db: AsyncSession) -> str:
         if not record:
             return json.dumps({"error": "Registro no encontrado para los filtros dados."})
             
+        # Strip tenant fields from update
+        fields.pop("company_id", None)
+        fields.pop("is_superadmin", None)
+        fields.pop("created_by", None)
+
         for k, v in fields.items():
             if k not in valid_columns:
                 return json.dumps({"error": f"Column '{k}' doesn't exist on {model_name}."})
@@ -151,7 +182,7 @@ async def update_record(tool_input: dict, db: AsyncSession) -> str:
         return json.dumps({"error": f"Error actualizando el registro: {str(e)}"}, ensure_ascii=False)
 
 
-async def delete_record(tool_input: dict, db: AsyncSession) -> str:
+async def delete_record(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Deletes an existing record based on filters."""
     model_name = tool_input.get("model")
     filters = tool_input.get("filters", {})
@@ -176,6 +207,10 @@ async def delete_record(tool_input: dict, db: AsyncSession) -> str:
     
     try:
         query = select(model_class)
+        # ── Tenant isolation: scope query to company ──
+        if user and _has_column(model_class, "company_id"):
+            query = query.where(getattr(model_class, "company_id") == user["company_id"])
+
         for k, v in filters.items():
             if hasattr(model_class, k):
                 casted_v = cast_value_for_column(model_class, k, v)
@@ -196,7 +231,7 @@ async def delete_record(tool_input: dict, db: AsyncSession) -> str:
         return json.dumps({"error": f"Error eliminando el registro: {str(e)}"}, ensure_ascii=False)
 
 
-async def search_records(tool_input: dict, db: AsyncSession) -> str:
+async def search_records(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Searches and lists records based on filters."""
     model_name = tool_input.get("model")
     filters = tool_input.get("filters", {})
@@ -217,6 +252,11 @@ async def search_records(tool_input: dict, db: AsyncSession) -> str:
     
     try:
         query = select(model_class)
+        # ── Tenant isolation: scope query to company ──
+        if user and _has_column(model_class, "company_id"):
+            query = query.where(getattr(model_class, "company_id") == user["company_id"])
+            filters.pop("company_id", None)  # Strip AI-provided company filter
+
         for k, v in filters.items():
             if hasattr(model_class, k) and v is not None:
                 # Basic string wildcard matching handling could be improved
@@ -262,7 +302,7 @@ CRUD_TOOLS = [
                 "model": {"type": "string", "description": "Nombre exacto del modelo (ej: 'Client', 'Installation', 'Activity', 'Maintenance', 'Product'). Obtené la lista desde describe_database_schema si hay dudas."},
                 "attributes": {
                     "type": "object", 
-                    "description": "Diccionario clave-valor con los campos requeridos y opcionales para la creación. Nunca proporciones campos que no existen en el modelo."
+                    "description": "Diccionario clave-valor con los campos del registro. NO incluir company_id ni created_by, se asignan automáticamente."
                 }
             },
             "required": ["model", "attributes"]
@@ -311,7 +351,7 @@ CRUD_TOOLS = [
                 "model": {"type": "string", "description": "Nombre exacto del modelo (ej. 'Installation')."},
                 "filters": {
                     "type": "object", 
-                    "description": "Filtros de búsqueda (ej. {'status': 'pending'} o {'name': '%Juan%'}). Usar % para comodines en strings."
+                    "description": "Filtros de búsqueda (ej. {'status': 'pending'} o {'name': '%Juan%'}). Usar % para comodines en strings. NO incluir company_id, se filtra automáticamente."
                 },
                 "limit": {
                     "type": "integer",

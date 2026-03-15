@@ -3,15 +3,28 @@ from datetime import date, timedelta, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.maintenance import Maintenance
+from app.models.installation import Installation
 
-async def schedule_maintenance(tool_input: dict, db: AsyncSession) -> str:
+async def schedule_maintenance(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Schedules a maintenance task for an installation."""
     # Convert string date if necessary
     sched_date = tool_input["scheduled_date"]
     if isinstance(sched_date, str):
         sched_date = datetime.strptime(sched_date.split("T")[0], "%Y-%m-%d").date()
         
+    # ── Tenant isolation: verify installation belongs to user's company ──
+    if user:
+        inst_result = await db.execute(
+            select(Installation).where(
+                Installation.id == tool_input["installation_id"],
+                Installation.company_id == user["company_id"]
+            )
+        )
+        if not inst_result.scalar_one_or_none():
+            return json.dumps({"error": "Instalación no encontrada."}, ensure_ascii=False)
+
     new_maint = Maintenance(
+        company_id=user["company_id"] if user else None,
         installation_id=tool_input["installation_id"],
         scheduled_date=sched_date, 
         maintenance_type=tool_input.get("maintenance_type", "routine"),
@@ -27,10 +40,18 @@ async def schedule_maintenance(tool_input: dict, db: AsyncSession) -> str:
     }, ensure_ascii=False)
 
 
-async def get_upcoming_maintenance(tool_input: dict, db: AsyncSession) -> str:
+async def get_upcoming_maintenance(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Gets a list of upcoming scheduled maintenance."""
     cutoff = date.today() + timedelta(days=tool_input.get("days", 30))
-    query = select(Maintenance).where(Maintenance.scheduled_date <= cutoff).where(Maintenance.status == "scheduled").order_by(Maintenance.scheduled_date).limit(10)
+    query = (
+        select(Maintenance)
+        .where(Maintenance.scheduled_date <= cutoff)
+        .where(Maintenance.status == "scheduled")
+    )
+    if user:
+        query = query.where(Maintenance.company_id == user["company_id"])
+    
+    query = query.order_by(Maintenance.scheduled_date).limit(10)
     result = await db.execute(query)
     data = [
         {"id": str(m.id), "installation_id": str(m.installation_id), "scheduled_date": str(m.scheduled_date), "maintenance_type": m.maintenance_type}

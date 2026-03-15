@@ -7,12 +7,19 @@ from app.models.client import Client
 from app.models.installation import Installation
 from app.models.product import Product
 
-async def get_dashboard_stats(tool_input: dict, db: AsyncSession) -> str:
+async def get_dashboard_stats(tool_input: dict, db: AsyncSession, user: dict = None) -> str:
     """Gets business statistics."""
-    clients = await db.execute(select(func.count(Client.id)))
-    installations = await db.execute(select(func.count(Installation.id)))
-    active = await db.execute(select(func.count(Installation.id)).where(Installation.status.in_(["completed", "maintenance"])))
-    power = await db.execute(select(func.coalesce(func.sum(Installation.system_power_kw), 0)))
+    company_filter_client = []
+    company_filter_install = []
+    
+    if user:
+        company_filter_client = [Client.company_id == user["company_id"]]
+        company_filter_install = [Installation.company_id == user["company_id"]]
+    
+    clients = await db.execute(select(func.count(Client.id)).where(*company_filter_client))
+    installations = await db.execute(select(func.count(Installation.id)).where(*company_filter_install))
+    active = await db.execute(select(func.count(Installation.id)).where(Installation.status.in_(["completed", "maintenance"]), *company_filter_install))
+    power = await db.execute(select(func.coalesce(func.sum(Installation.system_power_kw), 0)).where(*company_filter_install))
     stats = {
         "total_clients": clients.scalar() or 0,
         "total_installations": installations.scalar() or 0,

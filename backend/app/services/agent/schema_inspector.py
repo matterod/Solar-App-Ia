@@ -2,21 +2,21 @@ import json
 from sqlalchemy.inspection import inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import app.models
+from app.services.agent.crud_tools import ALLOWED_TABLES, get_models_dict
 
-def get_models_dict():
-    """Returns a dictionary of model name -> SQLAlchemy model class"""
-    models = {}
-    if hasattr(app.models, '__all__'):
-        for model_name in app.models.__all__:
-            model_class = getattr(app.models, model_name)
-            models[model_name] = model_class
-    return models
+# Models the AI should never inspect or operate on
+_HIDDEN_MODELS = {"Company", "User", "CompanyInvitation"}
+# Columns hidden from schema introspection (managed server-side)
+_HIDDEN_COLUMNS = {"company_id", "created_by", "is_superadmin", "firebase_uid", "hashed_password"}
 
-def describe_database_schema(tool_input: dict, db=None) -> str:
+
+
+def describe_database_schema(tool_input: dict, db=None, user=None) -> str:
     """Returns the database schema for all models or a specific model."""
     model_name_filter = tool_input.get("model")
     models = get_models_dict()
+    # Filter out hidden models
+    models = {k: v for k, v in models.items() if k not in _HIDDEN_MODELS}
     
     if model_name_filter:
         if model_name_filter not in models:
@@ -29,6 +29,8 @@ def describe_database_schema(tool_input: dict, db=None) -> str:
             mapper = inspect(model_class)
             columns = []
             for col in mapper.columns:
+                if col.name in _HIDDEN_COLUMNS:
+                    continue
                 col_info = {
                     "name": col.name,
                     "type": str(col.type),
@@ -55,7 +57,7 @@ def describe_database_schema(tool_input: dict, db=None) -> str:
 
     return json.dumps({"schema": schema_info}, ensure_ascii=False)
 
-async def preview_table_data(tool_input: dict, db: AsyncSession) -> str:
+async def preview_table_data(tool_input: dict, db: AsyncSession, user=None) -> str:
     """Returns a few sample rows from the specified table to understand data formats."""
     model_name = tool_input.get("model")
     limit = tool_input.get("limit", 3)
@@ -64,10 +66,17 @@ async def preview_table_data(tool_input: dict, db: AsyncSession) -> str:
     if model_name not in models:
         return json.dumps({"error": f"Model {model_name} not found."})
         
+    if model_name not in ALLOWED_TABLES:
+        return json.dumps({"error": f"No se permite previsualizar la tabla '{model_name}'."})
+        
     model_class = models[model_name]
     
     try:
         query = select(model_class)
+        # ── Tenant isolation ──
+        if user and hasattr(model_class, "company_id"):
+            query = query.where(model_class.company_id == user["company_id"])
+
         if hasattr(model_class, "id"):
             query = query.order_by(model_class.id.desc())
         query = query.limit(limit)
@@ -79,6 +88,8 @@ async def preview_table_data(tool_input: dict, db: AsyncSession) -> str:
         for rec in records:
             rec_dict = {}
             for col in inspect(model_class).columns:
+                if col.name in _HIDDEN_COLUMNS:
+                    continue
                 val = getattr(rec, col.name)
                 # handle non-serializable objects
                 if val is not None:
