@@ -15,19 +15,19 @@ settings = get_settings()
 
 
 def _build_engine_kwargs() -> dict:
-    """Build engine kwargs, handling asyncpg SSL compatibility.
-
-    asyncpg does not understand the libpq ``sslmode`` query parameter.
-    If the DATABASE_URL contains ``?sslmode=require`` (common with Supabase),
-    we strip it from the URL and pass ``ssl="require"`` via ``connect_args``
-    instead.
+    """Build engine kwargs, handling asyncpg compatibility with Supabase/PgBouncer.
+    Handles two issues:
+    1. asyncpg does not understand the libpq ``sslmode`` query parameter.
+       If present, we strip it and pass a proper ``ssl`` context via connect_args.
+    2. Supabase uses PgBouncer in transaction mode, which does not support
+       prepared statements. We disable them via ``statement_cache_size=0``.
     """
     url = settings.database_url
     connect_args: dict = {}
-
     parsed = urlparse(url)
     qs = parse_qs(parsed.query)
-
+    # Detect if this is a remote (non-localhost) connection (e.g. Supabase)
+    is_remote = parsed.hostname and parsed.hostname not in ("localhost", "127.0.0.1")
     if "sslmode" in qs:
         mode = qs.pop("sslmode")[0]  # e.g. "require"
         # Rebuild URL without sslmode
@@ -40,7 +40,9 @@ def _build_engine_kwargs() -> dict:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
             connect_args["ssl"] = ctx
-
+    # Disable prepared statements for PgBouncer compatibility (Supabase)
+    if is_remote:
+        connect_args["statement_cache_size"] = 0
     return {"url": url, "connect_args": connect_args}
 
 

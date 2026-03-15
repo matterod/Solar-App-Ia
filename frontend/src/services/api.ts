@@ -206,7 +206,7 @@ export const problems = {
         if (params?.search) qs.set("search", params.search);
         if (params?.status) qs.set("status", params.status);
         const q = qs.toString();
-        return request<Problem[]>(`/problems${q ? `?${q}` : ""}`);
+        return request<Problem[]>(`/problems/${q ? `?${q}` : ""}`);
     },
     get: (id: string) => request<Problem>(`/problems/${id}`),
     create: (data: Partial<Problem>) => request<Problem>("/problems/", { method: "POST", body: JSON.stringify(data) }),
