@@ -33,6 +33,7 @@ export default function AssistantPage() {
     // Speech Recognition State
     const [isListening, setIsListening] = useState(false);
     const recognitionRef = useRef<any>(null);
+    const isListeningRef = useRef(false); // ref mirror to use inside callbacks
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,47 +44,61 @@ export default function AssistantPage() {
         if (typeof window !== "undefined" && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
+            recognitionRef.current.continuous = true;
             recognitionRef.current.interimResults = true;
             recognitionRef.current.lang = 'es-AR'; // Español Argentina
 
             recognitionRef.current.onresult = (event: any) => {
-                let interimTranscript = '';
                 let finalTranscript = '';
 
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
                         finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
                     }
                 }
 
-                // Si hay texto final, lo sumamos al input actual
+                // Append final transcript to input
                 if (finalTranscript) {
-                    setInput((prev) => prev + " " + finalTranscript);
+                    setInput((prev) => (prev ? prev + " " : "") + finalTranscript.trim());
                 }
             };
 
             recognitionRef.current.onerror = (event: any) => {
                 console.error("Speech recognition error", event.error);
-                setIsListening(false);
+                // Only stop on fatal errors, ignore "no-speech" (user is just silent)
+                if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                    isListeningRef.current = false;
+                    setIsListening(false);
+                }
             };
 
             recognitionRef.current.onend = () => {
-                setIsListening(false);
+                // Browser sometimes fires onend even in continuous mode.
+                // Auto-restart if user hasn't explicitly stopped.
+                if (isListeningRef.current) {
+                    try {
+                        recognitionRef.current.start();
+                    } catch (e) {
+                        // If restart fails, stop gracefully
+                        isListeningRef.current = false;
+                        setIsListening(false);
+                    }
+                }
             };
         }
     }, []);
 
     const toggleListening = () => {
         if (isListening) {
-            recognitionRef.current?.stop();
+            // User explicitly stops
+            isListeningRef.current = false;
             setIsListening(false);
+            recognitionRef.current?.stop();
         } else {
             if (recognitionRef.current) {
                 try {
                     recognitionRef.current.start();
+                    isListeningRef.current = true;
                     setIsListening(true);
                 } catch (e) {
                     console.error(e);
