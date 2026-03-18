@@ -17,6 +17,7 @@ class ProductCreate(BaseModel):
     current_stock: Decimal = 0
     min_stock: Decimal = 0
     unit_cost: Optional[Decimal] = None
+    sale_price: Optional[Decimal] = None
 
 
 class ProductRead(BaseModel):
@@ -29,6 +30,7 @@ class ProductRead(BaseModel):
     current_stock: Decimal
     min_stock: Decimal
     unit_cost: Optional[Decimal] = None
+    sale_price: Optional[Decimal] = None
     is_active: bool
     created_at: datetime
 
@@ -43,4 +45,5 @@ class ProductUpdate(BaseModel):
     unit: Optional[str] = None
     min_stock: Optional[Decimal] = None
     unit_cost: Optional[Decimal] = None
+    sale_price: Optional[Decimal] = None
     is_active: Optional[bool] = None

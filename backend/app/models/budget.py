@@ -15,8 +15,9 @@ class Budget(Base):
     __tablename__ = "budgets"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    installation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("installations.id", ondelete="CASCADE"), nullable=False)
     company_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    client_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("clients.id", ondelete="SET NULL"))
+    installation_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("installations.id", ondelete="CASCADE"))
     budget_number: Mapped[str | None] = mapped_column(String(50), unique=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
@@ -35,8 +36,9 @@ class Budget(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
+    client = relationship("Client", backref="budgets")
     installation = relationship("Installation", back_populates="budgets")
-    items = relationship("BudgetItem", back_populates="budget", cascade="all, delete-orphan")
+    items = relationship("BudgetItem", back_populates="budget", cascade="all, delete-orphan", order_by="BudgetItem.sort_order")
 
 
 class BudgetItem(Base):
@@ -44,6 +46,7 @@ class BudgetItem(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     budget_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("budgets.id", ondelete="CASCADE"), nullable=False)
+    product_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"))
     description: Mapped[str] = mapped_column(String(255), nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=1)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
@@ -52,3 +55,4 @@ class BudgetItem(Base):
 
     # Relationships
     budget = relationship("Budget", back_populates="items")
+    product = relationship("Product")

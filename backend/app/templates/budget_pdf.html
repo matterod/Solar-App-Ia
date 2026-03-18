@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    font-size: 11px;
+    line-height: 1.5;
+    background: #fff;
+  }
+
+  .page {
+    padding: 40px 48px;
+    max-width: 210mm;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .company-info h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0284c7;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+
+  .company-info p {
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+
+  .quote-meta {
+    text-align: right;
+  }
+
+  .quote-meta .label {
+    font-size: 10px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .quote-meta .number {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 2px 0 8px 0;
+  }
+
+  .quote-meta .date-row {
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.8;
+  }
+
+  .quote-meta .date-row strong {
+    color: #334155;
+    font-weight: 600;
+  }
+
+  /* ── Accent Line ── */
+  .accent-line {
+    height: 3px;
+    background: linear-gradient(90deg, #0ea5e9, #06b6d4, #0ea5e9);
+    border-radius: 2px;
+    margin: 16px 0;
+  }
+
+  /* ── Client Section ── */
+  .section-title {
+    font-size: 9px;
+    font-weight: 700;
+    color: #0284c7;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  .client-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  .client-box .client-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+
+  .client-box .client-detail {
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.7;
+  }
+
+  .client-box .client-detail strong {
+    color: #475569;
+    font-weight: 600;
+  }
+
+  .client-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .client-grid > div {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  /* ── Installation Badge ── */
+  .installation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 10px;
+    color: #0369a1;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+
+  .installation-badge .icon {
+    font-size: 12px;
+  }
+
+  /* ── Items Table ── */
+  .items-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+
+  .items-table thead th {
+    background: #0284c7;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 10px 14px;
+    text-align: left;
+  }
+
+  .items-table thead th:nth-child(3),
+  .items-table thead th:nth-child(4),
+  .items-table thead th:nth-child(5) {
+    text-align: right;
+  }
+
+  .items-table tbody td {
+    padding: 10px 14px;
+    font-size: 10.5px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+
+  .items-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .items-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .items-table tbody td:nth-child(3),
+  .items-table tbody td:nth-child(4),
+  .items-table tbody td:nth-child(5) {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .items-table tbody td:first-child {
+    color: #94a3b8;
+    font-weight: 600;
+    width: 30px;
+    text-align: center;
+  }
+
+  .item-desc {
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  /* ── Totals ── */
+  .totals-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+  }
+
+  .totals-box {
+    width: 260px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 16px;
+    font-size: 10.5px;
+  }
+
+  .totals-row .label {
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .totals-row .value {
+    color: #334155;
+    font-weight: 600;
+  }
+
+  .totals-row.grand-total {
+    background: #0284c7;
+    padding: 12px 16px;
+  }
+
+  .totals-row.grand-total .label {
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .totals-row.grand-total .value {
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  /* ── Notes ── */
+  .notes-section {
+    margin-bottom: 24px;
+  }
+
+  .notes-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 32px;
+    text-align: center;
+    padding-top: 16px;
+  }
+
+  .footer p {
+    font-size: 9px;
+    color: #94a3b8;
+    line-height: 1.7;
+  }
+
+  .footer .company-name-footer {
+    font-weight: 600;
+    color: #0284c7;
+  }
+
+  /* ── Status Watermark ── */
+  .watermark {
+    position: fixed;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    font-size: 80px;
+    font-weight: 900;
+    color: rgba(148, 163, 184, 0.08);
+    text-transform: uppercase;
+    letter-spacing: 12px;
+    pointer-events: none;
+    z-index: 0;
+    white-space: nowrap;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 4px;
+  }
+
+  .status-draft { background: #f1f5f9; color: #64748b; }
+  .status-sent { background: #e0f2fe; color: #0369a1; }
+  .status-approved { background: #dcfce7; color: #15803d; }
+  .status-rejected { background: #fef2f2; color: #b91c1c; }
+</style>
+</head>
+<body>
+  {% if budget.status == 'draft' %}
+  <div class="watermark">BORRADOR</div>
+  {% endif %}
+
+  <div class="page">
+    <!-- Header -->
+    <div class="header">
+      <div class="company-info">
+        <h1>{{ company_name }}</h1>
+        {% if company_address %}<p>{{ company_address }}</p>{% endif %}
+        {% if company_phone %}<p>Tel: {{ company_phone }}</p>{% endif %}
+        {% if company_email %}<p>{{ company_email }}</p>{% endif %}
+      </div>
+      <div class="quote-meta">
+        <div class="label">Presupuesto</div>
+        <div class="number">{{ budget.budget_number or '---' }}</div>
+        <div class="date-row"><strong>Fecha:</strong> {{ created_date }}</div>
+        {% if valid_until %}
+        <div class="date-row"><strong>Válido hasta:</strong> {{ valid_until }}</div>
+        {% endif %}
+        <div class="status-badge status-{{ budget.status }}">{{ status_label }}</div>
+      </div>
+    </div>
+
+    <div class="accent-line"></div>
+
+    <!-- Client -->
+    {% if client %}
+    <div class="section-title">Datos del Cliente</div>
+    <div class="client-box">
+      <div class="client-name">{{ client.name }}</div>
+      <div class="client-grid">
+        <div class="client-detail">
+          {% if client.company %}<p><strong>Empresa:</strong> {{ client.company }}</p>{% endif %}
+          {% if client.tax_id %}<p><strong>CUIT/DNI:</strong> {{ client.tax_id }}</p>{% endif %}
+          {% if client.address %}<p><strong>Dirección:</strong> {{ client.address }}{% if client.city %}, {{ client.city }}{% endif %}{% if client.province %}, {{ client.province }}{% endif %}</p>{% endif %}
+        </div>
+        <div class="client-detail">
+          {% if client.email %}<p><strong>Email:</strong> {{ client.email }}</p>{% endif %}
+          {% if client.phone %}<p><strong>Teléfono:</strong> {{ client.phone }}</p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Installation -->
+    {% if installation %}
+    <div class="installation-badge">
+      <span class="icon">&#9889;</span>
+      <span><strong>Instalación:</strong> {{ installation.location_name }} — {{ installation.address }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Description -->
+    {% if budget.description %}
+    <div class="notes-section">
+      <div class="section-title">Descripción</div>
+      <div class="notes-box">{{ budget.description }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Items Table -->
+    <div class="section-title">Detalle de Ítems</div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descripción</th>
+          <th>Cantidad</th>
+          <th>Precio Unit.</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td><span class="item-desc">{{ item.description }}</span></td>
+          <td>{{ item.quantity_fmt }}</td>
+          <td>{{ item.unit_price_fmt }}</td>
+          <td>{{ item.total_fmt }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals-wrapper">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="label">Subtotal</span>
+          <span class="value">{{ subtotal_fmt }}</span>
+        </div>
+        <div class="totals-row">
+          <span class="label">IVA ({{ tax_rate }}%)</span>
+          <span class="value">{{ tax_amount_fmt }}</span>
+        </div>
+        <div class="totals-row grand-total">
+          <span class="label">TOTAL</span>
+          <span class="value">{{ total_fmt }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    {% if budget.notes %}
+    <div class="notes-section">
+      <div class="section-title">Notas y Condiciones</div>
+      <div class="notes-box">{{ budget.notes }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="accent-line"></div>
+    <div class="footer">
+      <p>Gracias por confiar en <span class="company-name-footer">{{ company_name }}</span></p>
+      <p>Documento generado el {{ generated_date }}</p>
+    </div>
+  </div>
+</body>
+</html>

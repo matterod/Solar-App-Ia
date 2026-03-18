@@ -102,7 +102,7 @@ export const installations = {
 export interface Product {
     id: string; name: string; sku?: string; description?: string; category?: string;
     unit: string; current_stock: number; min_stock: number; unit_cost?: number;
-    is_active: boolean; created_at: string;
+    sale_price?: number; is_active: boolean; created_at: string;
 }
 export const products = {
     list: (params?: { search?: string; category?: string; low_stock?: boolean }) => {
@@ -247,6 +247,124 @@ export const costs = {
     delete: (id: string) => request<void>(`/costs/${id}`, { method: "DELETE" }),
 };
 
+
+/* ── Budgets (Presupuestos) ── */
+export interface BudgetItem {
+    id: string;
+    budget_id: string;
+    product_id?: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+    sort_order: number;
+}
+
+export interface Budget {
+    id: string;
+    company_id: string;
+    client_id?: string;
+    installation_id?: string;
+    budget_number?: string;
+    title: string;
+    description?: string;
+    subtotal: number;
+    tax_rate: number;
+    tax_amount: number;
+    total: number;
+    status: "draft" | "sent" | "approved" | "rejected";
+    valid_until?: string;
+    notes?: string;
+    items: BudgetItem[];
+    created_by?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BudgetListItem {
+    id: string;
+    company_id: string;
+    client_id?: string;
+    installation_id?: string;
+    budget_number?: string;
+    title: string;
+    subtotal: number;
+    tax_rate: number;
+    tax_amount: number;
+    total: number;
+    status: "draft" | "sent" | "approved" | "rejected";
+    valid_until?: string;
+    client_name?: string;
+    installation_name?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export const budgets = {
+    list: (params?: { status?: string; client_id?: string; installation_id?: string; search?: string }) => {
+        const qs = new URLSearchParams();
+        if (params?.status) qs.set("status", params.status);
+        if (params?.client_id) qs.set("client_id", params.client_id);
+        if (params?.installation_id) qs.set("installation_id", params.installation_id);
+        if (params?.search) qs.set("search", params.search);
+        const q = qs.toString();
+        return request<BudgetListItem[]>(`/budgets/${q ? `?${q}` : ""}`);
+    },
+    get: (id: string) => request<Budget>(`/budgets/${id}`),
+    create: (data: {
+        client_id?: string;
+        installation_id?: string;
+        title: string;
+        description?: string;
+        tax_rate?: number;
+        valid_until?: string;
+        notes?: string;
+        items: Array<{
+            product_id?: string;
+            description: string;
+            quantity: number;
+            unit_price: number;
+            sort_order?: number;
+        }>;
+    }) => request<Budget>("/budgets/", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: {
+        client_id?: string;
+        installation_id?: string;
+        title?: string;
+        description?: string;
+        tax_rate?: number;
+        valid_until?: string;
+        notes?: string;
+        items?: Array<{
+            product_id?: string;
+            description: string;
+            quantity: number;
+            unit_price: number;
+            sort_order?: number;
+        }>;
+    }) => request<Budget>(`/budgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>(`/budgets/${id}`, { method: "DELETE" }),
+    updateStatus: (id: string, status: string) =>
+        request<Budget>(`/budgets/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+    duplicate: (id: string) =>
+        request<Budget>(`/budgets/${id}/duplicate`, { method: "POST" }),
+    downloadPdf: async (id: string, filename?: string) => {
+        const token = await getToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`${API_URL}/api/v1/budgets/${id}/pdf`, { headers });
+        if (!res.ok) throw new Error("Error al generar PDF");
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "presupuesto.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    },
+};
 
 /* ── Plan & Usage ── */
 
