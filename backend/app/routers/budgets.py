@@ -350,10 +350,13 @@ async def get_budget_pdf(
     # Lazy import to keep startup fast
     from app.services.budget_pdf_service import generate_budget_pdf
 
-    # Load budget with items, client, installation, and company
+    # Load budget with items + each item's product (for SKU), client, installation, and company
+    from sqlalchemy.orm import subqueryload
     result = await db.execute(
         select(Budget)
-        .options(selectinload(Budget.items))
+        .options(
+            selectinload(Budget.items).selectinload(BudgetItem.product)
+        )
         .where(Budget.id == budget_id, Budget.company_id == current_user["company_id"])
     )
     budget = result.scalar_one_or_none()

@@ -1,6 +1,5 @@
 """Budget PDF generation service using WeasyPrint."""
 
-import locale
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -19,22 +18,21 @@ STATUS_LABELS = {
 
 
 def _format_currency(value: Decimal | float | int | None) -> str:
-    """Format a number as Argentine pesos."""
+    """Format a number as Argentine pesos: $ 1.450.000,00"""
     if value is None:
-        return "$0,00"
+        return "$ 0,00"
     v = float(value)
-    # Use manual formatting for Argentine style: $XXX.XXX,XX
     if v < 0:
-        return f"-${abs(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return f"${v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"-$ {abs(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def _format_quantity(value: Decimal | float | int) -> str:
-    """Format quantity — remove decimals if integer."""
+    """Format quantity — show .00 for consistency."""
     v = float(value)
     if v == int(v):
-        return str(int(v))
-    return f"{v:.2f}".replace(".", ",")
+        return f"{int(v)}.00"
+    return f"{v:.2f}"
 
 
 def _format_date(d) -> str:
@@ -64,10 +62,14 @@ def generate_budget_pdf(
     env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
     template = env.get_template("budget_pdf.html")
 
-    # Format items
+    # Format items — include SKU from linked product if available
     items_data = []
     for item in sorted(budget.items, key=lambda x: x.sort_order):
+        sku = ""
+        if hasattr(item, "product") and item.product and item.product.sku:
+            sku = item.product.sku
         items_data.append({
+            "sku": sku,
             "description": item.description,
             "quantity_fmt": _format_quantity(item.quantity),
             "unit_price_fmt": _format_currency(item.unit_price),
@@ -79,9 +81,6 @@ def generate_budget_pdf(
         client=client,
         installation=installation,
         company_name=company.name if company else "Solar ERP",
-        company_address=None,  # Text-based header, no address on company model yet
-        company_phone=None,
-        company_email=None,
         items=items_data,
         subtotal_fmt=_format_currency(budget.subtotal),
         tax_rate=f"{float(budget.tax_rate):.0f}" if float(budget.tax_rate) == int(float(budget.tax_rate)) else f"{float(budget.tax_rate):.2f}",
