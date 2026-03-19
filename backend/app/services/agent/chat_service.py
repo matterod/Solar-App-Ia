@@ -53,6 +53,7 @@ REGLAS DE USO DE HERRAMIENTAS (CRITICO):
 16. BASE DE CONOCIMIENTO (Problemas/Soluciones): Para registrar un problema (con o sin solución), SIEMPRE usá la tool `add_problem`. Esta tool maneja duplicados, crea el problema y la solución en un solo paso atómico, y actualiza el estado automáticamente. NUNCA uses `create_record` con model="Problem" o model="Solution" — eso rompe la lógica de negocio. Al buscar soluciones para dar consejos, usá `search_records(model="Problem")` primero.
 17. MULTI-TENANT: Este sistema es multi-empresa. NUNCA proporciones ni incluyas `company_id` en los atributos al crear o buscar registros — se asigna automáticamente según tu empresa. Tampoco incluyas `created_by`, se asigna según el usuario actual.
 18. SEGURIDAD: Nunca intentes acceder, buscar, ni modificar datos de tablas internas como Company, User o CompanyInvitation.
+19. CONFIRMACIÓN: NUNCA respondas con un mensaje de éxito (ej. "✅ Registrado", "✅ Guardado") si no ejecutaste previamente la tool correspondiente en esta misma conversación. Si el usuario pide registrar, crear, guardar o modificar algo, PRIMERO llamá la tool, DESPUÉS confirmá. Una respuesta de texto sola sin tool call previa es SIEMPRE incorrecta para operaciones de escritura.
 """
 
 
@@ -118,6 +119,7 @@ async def run_agent_chat(
                 max_tokens=4096,
                 system=system,
                 tools=get_tools(),
+                tool_choice={"type": "auto"},
                 messages=messages,
             )
         except anthropic.APIError as e:

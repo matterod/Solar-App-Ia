@@ -27,8 +27,10 @@ logger = logging.getLogger(__name__)
 ADD_PROBLEM_TOOL = {
     "name": "add_problem",
     "description": (
-        "Registrar un problema en la base de conocimiento IA, con o sin solución. "
-        "Usa esta tool SIEMPRE que el usuario quiera anotar un problema técnico o de campo. "
+        "USAR SIEMPRE que el usuario quiera anotar, guardar, registrar o agregar un problema técnico, "
+        "falla, error o incidente de campo. También usar cuando hay solución disponible. "
+        "Esta tool es OBLIGATORIA para cualquier operación de escritura sobre problemas — "
+        "NO respondas con confirmación de texto sin haberla llamado primero. "
         "Si también hay solución disponible, pasala en el mismo llamado — esto actualiza el "
         "estado del problema a 'resolved' automáticamente en un solo paso atómico."
     ),
