@@ -191,6 +191,17 @@ async def telegram_webhook(
         )
         return {"ok": True}
 
+    # ── Task 1.3: Diagnostic tool_calls_log after run_agent_chat ─────────────
+    logger.info(
+        "Telegram agent completed",
+        extra={
+            "chat_id": chat_id,
+            "tool_calls": [tc.get("tool") for tc in tool_calls_log],
+            "tool_count": len(tool_calls_log),
+            "add_problem_called": any(tc.get("tool") == "add_problem" for tc in tool_calls_log),
+        }
+    )
+
     # Persist both sides of the conversation
     await tg.save_message(db, chat_id, "user", text)
     await tg.save_message(db, chat_id, "assistant", response_text)

@@ -96,11 +96,12 @@ async def run_agent_chat(
             else:
                 messages.append({"role": role, "content": content})
 
-    # Append the new user message
-    if messages and messages[-1]["role"] == "user":
-        messages[-1]["content"] += f"\n\n{message}"
-    else:
-        messages.append({"role": "user", "content": message})
+    # Append the new user message — always as a new entry.
+    # NEVER merge into the last history message even if it is also role="user".
+    # History represents PAST turns (read-only context); the current `message`
+    # is always its own turn. Merging corrupts the turn boundary Claude uses to
+    # reason about what was already done (Bug A fix — see design doc).
+    messages.append({"role": "user", "content": message})
 
     tool_calls_log: list[dict] = []
 

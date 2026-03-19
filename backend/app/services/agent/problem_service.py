@@ -83,14 +83,56 @@ async def add_problem(tool_input: dict, db: AsyncSession, user: dict = None) -> 
     solution_text: str = (tool_input.get("solution") or "").strip()
     tags: list = tool_input.get("tags") or []
 
+    # ── Task 1.1: Diagnostic entry-point logging ───────────────────────────────
+    logger.info(
+        "add_problem called",
+        extra={
+            "tool": "add_problem",
+            "user_id": str(user.get("id")) if user else None,
+            "company_id": str(user.get("company_id")) if user else None,
+            "company_id_type": type(user.get("company_id")).__name__ if user else None,
+            "title": title[:80],
+            "has_solution": bool(solution_text),
+            "tags": tags,
+        }
+    )
+
     if not title:
         return json.dumps({"error": "El campo 'title' es requerido."}, ensure_ascii=False)
     if not description:
         return json.dumps({"error": "El campo 'description' es requerido."}, ensure_ascii=False)
 
     company_id = user["company_id"] if user else None
+
+    # ── Task 2.4: Explicit company_id guard ────────────────────────────────────
     if not company_id:
+        logger.error(
+            "add_problem aborted: missing company_id",
+            extra={
+                "tool": "add_problem",
+                "user_id": str(user.get("id")) if user else None,
+                "user_dict_keys": list(user.keys()) if user else None,
+            }
+        )
         return json.dumps({"error": "No se pudo determinar la empresa del usuario."}, ensure_ascii=False)
+
+    # Validate company_id is UUID-compatible
+    try:
+        uuid.UUID(str(company_id))
+    except (ValueError, AttributeError) as exc:
+        logger.error(
+            "add_problem aborted: invalid company_id format",
+            extra={
+                "tool": "add_problem",
+                "user_id": str(user.get("id")) if user else None,
+                "company_id": str(company_id),
+                "company_id_type": type(company_id).__name__,
+                "error": str(exc),
+            }
+        )
+        raise ValueError(
+            f"company_id inválido — se esperaba UUID, se recibió {type(company_id).__name__!r}: {company_id!r}"
+        ) from exc
 
     try:
         # ── 1. Duplicate check ─────────────────────────────────────────────────
@@ -156,5 +198,16 @@ async def add_problem(tool_input: dict, db: AsyncSession, user: dict = None) -> 
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"Error in add_problem tool: {e}")
-        return json.dumps({"error": f"Error al registrar el problema: {str(e)}"}, ensure_ascii=False)
+        # ── Task 1.2: Full traceback logging + Task 2.3: re-raise so execute_tool
+        # surfaces the real error to Claude (instead of a silent JSON "success")
+        logger.error(
+            "add_problem failed",
+            extra={
+                "tool": "add_problem",
+                "user_id": str(user.get("id")) if user else None,
+                "company_id": str(user.get("company_id")) if user else None,
+                "error": str(e),
+            },
+            exc_info=True,
+        )
+        raise  # Let execute_tool in tool_registry.py catch this and return the real error to Claude
