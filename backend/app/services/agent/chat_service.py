@@ -122,7 +122,7 @@ async def run_agent_chat(
     for _ in range(10):
         try:
             response = client.messages.create(
-                model="claude-3-5-haiku-20241022",
+                model="claude-haiku-4-5",
                 max_tokens=4096,
                 system=system,
                 tools=get_tools(),
