@@ -16,12 +16,19 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.config import get_settings
 from app.database import get_db
+from app.models.budget import Budget, BudgetItem
+from app.models.client import Client
+from app.models.installation import Installation
+from app.models.company import Company
 from app.services import telegram_service as tg
 from app.services.agent.chat_service import run_agent_chat
+from app.services.budget_pdf_service import generate_budget_pdf
 from app.services.plan_limits import is_within_limit
 
 logger = logging.getLogger(__name__)
@@ -170,7 +177,7 @@ async def telegram_webhook(
 
     # Run Sol
     try:
-        response_text, _ = await run_agent_chat(
+        response_text, tool_calls_log = await run_agent_chat(
             message=text,
             history=history,
             current_user=current_user,
@@ -188,8 +195,53 @@ async def telegram_webhook(
     await tg.save_message(db, chat_id, "user", text)
     await tg.save_message(db, chat_id, "assistant", response_text)
 
-    # Reply
+    # Reply with Sol's text first
     await tg.send_message(token, chat_id, response_text)
+
+    # ── Auto-send PDF if a budget was just created ────────────────────────────
+    budget_created = any(tc.get("tool") == "create_budget" for tc in tool_calls_log)
+    if budget_created:
+        try:
+            # Fetch the most recent budget created by this user
+            result = await db.execute(
+                select(Budget)
+                .options(selectinload(Budget.items).selectinload(BudgetItem.product))
+                .where(Budget.created_by == current_user["id"])
+                .order_by(Budget.created_at.desc())
+                .limit(1)
+            )
+            budget = result.scalar_one_or_none()
+
+            if budget:
+                # Load related client, installation, company
+                client = None
+                if budget.client_id:
+                    r = await db.execute(select(Client).where(Client.id == budget.client_id))
+                    client = r.scalar_one_or_none()
+
+                installation = None
+                if budget.installation_id:
+                    r = await db.execute(select(Installation).where(Installation.id == budget.installation_id))
+                    installation = r.scalar_one_or_none()
+
+                r = await db.execute(select(Company).where(Company.id == budget.company_id))
+                company = r.scalar_one_or_none()
+
+                pdf_bytes = generate_budget_pdf(budget, client, installation, company)
+                filename = f"{budget.budget_number or 'presupuesto'}.pdf"
+
+                await tg.send_typing(token, chat_id)
+                await tg.send_document(
+                    token,
+                    chat_id,
+                    pdf_bytes,
+                    filename,
+                    caption=f"📄 {filename}",
+                )
+        except Exception as e:
+            logger.error(f"Failed to send budget PDF to Telegram chat {chat_id}: {e}")
+            # Don't surface this error to the user — text reply already sent
+
     return {"ok": True}
 
 

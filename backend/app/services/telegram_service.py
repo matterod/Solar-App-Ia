@@ -59,6 +59,26 @@ async def send_typing(token: str, chat_id: int) -> None:
     })
 
 
+async def send_document(
+    token: str,
+    chat_id: int,
+    file_bytes: bytes,
+    filename: str,
+    caption: str = "",
+) -> None:
+    """Send a file (e.g. PDF) as a Telegram document using multipart upload."""
+    url = f"{TELEGRAM_API.format(token=token)}/sendDocument"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            files = {"document": (filename, file_bytes, "application/pdf")}
+            data: dict = {"chat_id": str(chat_id)}
+            if caption:
+                data["caption"] = caption
+            await client.post(url, data=data, files=files)
+    except Exception as e:
+        logger.error(f"Telegram send_document error: {e}")
+
+
 async def set_webhook(token: str, webhook_url: str, secret: str) -> dict:
     """Register the webhook URL with Telegram."""
     result = await _api(token, "setWebhook", {
