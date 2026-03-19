@@ -18,3 +18,5 @@ from app.routers.team import router as team_router
 from app.routers.costs import router as costs_router
 from app.routers.budgets import router as budgets_router
 from app.routers.plan import router as plan_router
+from app.routers.telegram import router as telegram_webhook_router
+from app.routers.telegram_api import router as telegram_api_router

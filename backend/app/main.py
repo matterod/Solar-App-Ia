@@ -27,6 +27,8 @@ from app.routers import (
     costs_router,
     budgets_router,
     plan_router,
+    telegram_webhook_router,
+    telegram_api_router,
 )
 
 settings = get_settings()
@@ -81,6 +83,8 @@ app.include_router(team_router, prefix=API_PREFIX)
 app.include_router(costs_router, prefix=API_PREFIX)
 app.include_router(budgets_router, prefix=API_PREFIX)
 app.include_router(plan_router, prefix=API_PREFIX)
+app.include_router(telegram_webhook_router, prefix=API_PREFIX)
+app.include_router(telegram_api_router, prefix=API_PREFIX)
 
 
 @app.get("/")

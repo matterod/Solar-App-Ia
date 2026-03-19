@@ -394,6 +394,25 @@ export const plan = {
     usage: () => request<PlanUsage>("/plan/usage"),
 };
 
+/* ── Telegram ── */
+export interface TelegramLinkCode {
+    code: string;
+    expires_minutes: number;
+    bot_username: string;
+}
+
+export interface TelegramStatus {
+    linked: boolean;
+    telegram_username?: string;
+    linked_at?: string;
+}
+
+export const telegram = {
+    generateCode: () => request<TelegramLinkCode>("/telegram/link-code", { method: "POST" }),
+    status: () => request<TelegramStatus>("/telegram/status"),
+    unlink: () => request<void>("/telegram/link", { method: "DELETE" }),
+};
+
 export const admin = {
     companies: () => request<CompanyAdmin[]>("/admin/companies"),
     changePlan: (companyId: string, newPlan: string) =>
