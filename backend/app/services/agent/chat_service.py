@@ -50,7 +50,7 @@ REGLAS DE USO DE HERRAMIENTAS (CRITICO):
 13. DOMINIO > CRUD: Si existe un tool específico para el dominio (ej. `schedule_maintenance`, `update_stock`), DEBES usarlo por sobre un CRUD genérico para que la lógica de negocio se aplique correctamente.
 14. RELACIONES: Para saber qué instalaciones tiene un cliente específico, primero buscá su `id` en `Client` por nombre, y luego buscá en `Installation` filtrando por `client_id`.
 15. UBICACIONES: Una misma ubicación (como "La Rinconada" o un country/barrio cerrado) puede tener varias instalaciones correspondientes a distintos clientes. Para buscar por lugar o barrio, usá `search_records(model="Installation")` con el filtro `location_name` usando comodines (ej. `{"location_name": "%Rinconada%"}`).
-16. BASE DE CONOCIMIENTO (Problemas/Soluciones): Para registrar un problema (con o sin solución), SIEMPRE usá la tool `add_problem`. Esta tool maneja duplicados, crea el problema y la solución en un solo paso atómico, y actualiza el estado automáticamente. NUNCA uses `create_record` con model="Problem" o model="Solution" — eso rompe la lógica de negocio. Al buscar soluciones para dar consejos, usá `search_records(model="Problem")` primero.
+16. BASE DE CONOCIMIENTO (Problemas/Soluciones): Podés registrar y aprender de problemas y soluciones pasadas usando los modelos Problem y Solution. Si te piden anotar un problema, USÁ SIEMPRE la herramienta `add_problem`. Esta herramienta registra el problema y opcionalmente su solución en un solo paso atómico.
 17. MULTI-TENANT: Este sistema es multi-empresa. NUNCA proporciones ni incluyas `company_id` en los atributos al crear o buscar registros — se asigna automáticamente según tu empresa. Tampoco incluyas `created_by`, se asigna según el usuario actual.
 18. SEGURIDAD: Nunca intentes acceder, buscar, ni modificar datos de tablas internas como Company, User o CompanyInvitation.
 19. CONFIRMACIÓN: NUNCA respondas con un mensaje de éxito (ej. "✅ Registrado", "✅ Guardado") si no ejecutaste previamente la tool correspondiente en esta misma conversación. Si el usuario pide registrar, crear, guardar o modificar algo, PRIMERO llamá la tool, DESPUÉS confirmá. Una respuesta de texto sola sin tool call previa es SIEMPRE incorrecta para operaciones de escritura.
@@ -109,14 +109,20 @@ async def run_agent_chat(
         SYSTEM_PROMPT
         + f"\n\nContexto actual: Estás asistiendo a {current_user['full_name']} "
         f"de la empresa '{current_user['company_name']}'. "
-        "No necesitás preguntar el company_id ni el nombre de la empresa."
+        "No necesitás preguntar el company_id ni el nombre de la empresa.\n"
+        "REGLA CRÍTICA DE HISTORIAL: El historial de conversación puede contener confirmaciones "
+        "de texto de acciones pasadas (ej. '✅ Problema registrado'). NUNCA uses esas confirmaciones "
+        "como evidencia de que una acción ya fue ejecutada en el turno ACTUAL. "
+        "Si el usuario pide registrar, crear o guardar algo en ESTE mensaje, SIEMPRE llamá la tool "
+        "correspondiente sin importar qué diga el historial previo. "
+        "El historial es solo contexto — no es prueba de ejecución."
     )
 
     # Iterative tool-calling loop — max 10 rounds
     for _ in range(10):
         try:
             response = client.messages.create(
-                model="claude-haiku-4-5",
+                model="claude-3-5-haiku-20241022",
                 max_tokens=4096,
                 system=system,
                 tools=get_tools(),
@@ -136,6 +142,7 @@ async def run_agent_chat(
                     logger.info(f"[Sol tool] {block.name}({block.input})")
                     tool_calls_log.append({"tool": block.name, "input": block.input})
                     result = await execute_tool(block.name, block.input, db, user=current_user)
+                    logger.info(f"Tool result: {result[:200]}...")
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
