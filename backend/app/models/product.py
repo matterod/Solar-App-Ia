@@ -24,6 +24,7 @@ class Product(Base):
     current_stock: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
     min_stock: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
     unit_cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    sale_price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)

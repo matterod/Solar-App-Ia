@@ -12,6 +12,7 @@ from app.services.dashboard_service import GET_DASHBOARD_STATS_TOOL, get_dashboa
 from app.services.inventory_service import UPDATE_STOCK_TOOL, update_stock
 from app.services.maintenance_service import SCHEDULE_MAINTENANCE_TOOL, GET_UPCOMING_MAINTENANCE_TOOL, schedule_maintenance, get_upcoming_maintenance
 from app.services.cost_service import ADD_COST_TOOL, add_installation_cost
+from app.services.budget_agent_service import CREATE_BUDGET_TOOL, create_budget
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +144,15 @@ registry.register(AgentTool(
     category="costs",
     input_schema=ADD_COST_TOOL["input_schema"],
     handler=add_installation_cost
+))
+
+# Register Budget Tool
+registry.register(AgentTool(
+    name=CREATE_BUDGET_TOOL["name"],
+    description=CREATE_BUDGET_TOOL["description"],
+    category="budgets",
+    input_schema=CREATE_BUDGET_TOOL["input_schema"],
+    handler=create_budget
 ))
 
 # Helper functions for the router

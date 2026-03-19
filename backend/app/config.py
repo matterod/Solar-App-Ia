@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     # WhatsApp
     whatsapp_api_url: str = ""
     whatsapp_api_token: str = ""
+    
+    # Telegram
+    telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
 
     class Config:
         env_file = ".env"

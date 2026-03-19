@@ -19,6 +19,7 @@ from app.models.problem import Problem
 from app.models.solution import Solution
 from app.models.cost import Cost
 from app.models.invitation import CompanyInvitation
+from app.models.telegram import TelegramLink, TelegramMessage, TelegramLinkCode
 
 __all__ = [
     "Company",
@@ -38,4 +39,7 @@ __all__ = [
     "Solution",
     "CompanyInvitation",
     "Cost",
+    "TelegramLink",
+    "TelegramMessage",
+    "TelegramLinkCode",
 ]

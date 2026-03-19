@@ -84,6 +84,27 @@ def check_limit(resource: str):
     return checker
 
 
+async def is_within_limit(db: AsyncSession, current_user: dict, resource: str) -> bool:
+    """
+    Non-raising check: returns True if the user is within their plan limit,
+    False if they have exceeded it.  Used by the Telegram webhook so we can
+    send a friendly message instead of raising an HTTP 403.
+    """
+    plan = current_user.get("plan", "demo")
+    limit = PLAN_LIMITS.get(plan, {}).get(resource)
+    if limit is None:
+        return True   # unlimited
+
+    if resource == "ai_questions":
+        user_result = await db.execute(
+            select(User.message_count).where(User.id == current_user["id"])
+        )
+        used = user_result.scalar_one_or_none() or 0
+        return used < limit
+
+    return True   # default allow for other resources
+
+
 async def get_usage(current_user: dict, db: AsyncSession) -> Dict[str, Any]:
     """Returns current usage stats for the user's company."""
     plan = current_user.get("plan", "demo")

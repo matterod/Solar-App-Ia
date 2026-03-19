@@ -11,7 +11,7 @@ from app.schemas.maintenance import MaintenanceCreate, MaintenanceRead, Maintena
 from app.schemas.pending_task import PendingTaskCreate, PendingTaskRead, PendingTaskUpdate
 from app.schemas.product import ProductCreate, ProductRead, ProductUpdate
 from app.schemas.stock_movement import StockMovementCreate, StockMovementRead
-from app.schemas.budget import BudgetCreate, BudgetRead, BudgetItemCreate, BudgetItemRead
+from app.schemas.budget import BudgetCreate, BudgetRead, BudgetUpdate, BudgetListRead, BudgetItemCreate, BudgetItemRead, BudgetStatusUpdate
 from app.schemas.payment import PaymentCreate, PaymentRead
 from app.schemas.team import TeamMemberRead
 from app.schemas.cost import CostCreate, CostRead, CostUpdate

@@ -60,8 +60,11 @@ async def create_problem(
     db_obj = Problem(company_id=current_user["company_id"], **problem.model_dump())
     db.add(db_obj)
     await db.commit()
-    await db.refresh(db_obj)
-    return db_obj
+    # Re-fetch with selectinload so the solutions relationship is ready for serialization
+    result = await db.execute(
+        select(Problem).options(selectinload(Problem.solutions)).where(Problem.id == db_obj.id)
+    )
+    return result.scalar_one()
 
 @router.get("/", response_model=List[ProblemResponse])
 async def get_problems(
@@ -121,8 +124,11 @@ async def update_problem(
         setattr(db_obj, key, value)
     
     await db.commit()
-    await db.refresh(db_obj)
-    return db_obj
+    # Re-fetch with selectinload to avoid lazy-load issues on solutions
+    result = await db.execute(
+        select(Problem).options(selectinload(Problem.solutions)).where(Problem.id == db_obj.id)
+    )
+    return result.scalar_one()
 
 @router.post("/{problem_id}/solutions", response_model=SolutionResponse)
 async def add_solution(
@@ -142,7 +148,7 @@ async def add_solution(
     if not db_problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     
-    db_solution = Solution(company_id=current_user["company_id"], **solution.model_dump(), problem_id=problem_id)
+    db_solution = Solution(**solution.model_dump(), problem_id=problem_id)
     db.add(db_solution)
     db_problem.status = "resolved"
     await db.commit()
