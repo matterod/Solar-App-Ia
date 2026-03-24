@@ -143,6 +143,7 @@ async def add_problem(tool_input: dict, db: AsyncSession, user: dict = None) -> 
         )
         existing_result = await db.execute(existing_q)
         existing_problem = existing_result.scalar_one_or_none()
+        logger.info(f"Duplicate check: {'Found' if existing_problem else 'Not found'}")
 
         if existing_problem:
             problem = existing_problem
@@ -172,6 +173,7 @@ async def add_problem(tool_input: dict, db: AsyncSession, user: dict = None) -> 
             solution_created = True
 
         # ── 4. Single commit ───────────────────────────────────────────────────
+        logger.info(f"Committing problem creation (new={created_new}, solution={solution_created})")
         await db.commit()
 
         # Build response

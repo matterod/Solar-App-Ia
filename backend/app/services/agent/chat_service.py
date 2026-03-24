@@ -5,6 +5,7 @@ Used by both the web API (routers/agent.py) and the Telegram webhook
 (routers/telegram.py) so the exact same AI behaviour runs in both channels.
 """
 
+import json
 import logging
 from typing import Optional
 
@@ -14,7 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.models.user import User as UserModel
+from app.services.agent.executor import execute_plan
+from app.services.agent.planner import build_plan
 from app.services.agent.tool_registry import get_tools, execute_tool
+from app.services.agent.compression import compress_tool_result
 
 logger = logging.getLogger(__name__)
 
@@ -57,77 +61,35 @@ REGLAS DE USO DE HERRAMIENTAS (CRITICO):
 """
 
 
-# ── Core agent loop ───────────────────────────────────────────────────────────
+# ── Internal helpers ──────────────────────────────────────────────────────────
 
-async def run_agent_chat(
-    message: str,
-    history: list[dict],
+async def _reactive_loop(
+    messages: list,
+    system_blocks: list,
+    tools: list,
+    db,
     current_user: dict,
-    db: AsyncSession,
-) -> tuple[str, list[dict]]:
+    client: anthropic.Anthropic,
+) -> tuple[str, list]:
     """
-    Run the Sol agent loop and return (response_text, tool_calls_log).
+    Iterative tool-calling loop — max 10 rounds.
 
-    This is the single implementation shared by the web endpoint and the
-    Telegram webhook — guaranteeing identical behaviour on both channels.
-
-    Args:
-        message:      The new user message.
-        history:      Previous messages [{role, content}, …] (≤20, oldest-first).
-        current_user: Auth dict from get_current_user / telegram_service.
-        db:           Async SQLAlchemy session.
-
-    Returns:
-        Tuple of (Sol's text reply, list of tool call records for logging).
+    This is the original reactive loop extracted verbatim from run_agent_chat()
+    so it can be called both directly (fallback) and from the plan-and-execute
+    routing branch.  Zero behaviour change.
     """
-    settings = get_settings()
-
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
-    # Build alternating message list (Claude requires strictly alternating roles)
-    messages: list[dict] = []
-    for h in history[-20:]:
-        role = h.get("role")
-        content = h.get("content")
-        if role in ("user", "assistant") and content:
-            if messages and messages[-1]["role"] == role:
-                # Merge consecutive same-role messages
-                messages[-1]["content"] += f"\n\n{content}"
-            else:
-                messages.append({"role": role, "content": content})
-
-    # Append the new user message — always as a new entry.
-    # NEVER merge into the last history message even if it is also role="user".
-    # History represents PAST turns (read-only context); the current `message`
-    # is always its own turn. Merging corrupts the turn boundary Claude uses to
-    # reason about what was already done (Bug A fix — see design doc).
-    messages.append({"role": "user", "content": message})
-
     tool_calls_log: list[dict] = []
 
-    system = (
-        SYSTEM_PROMPT
-        + f"\n\nContexto actual: Estás asistiendo a {current_user['full_name']} "
-        f"de la empresa '{current_user['company_name']}'. "
-        "No necesitás preguntar el company_id ni el nombre de la empresa.\n"
-        "REGLA CRÍTICA DE HISTORIAL: El historial de conversación puede contener confirmaciones "
-        "de texto de acciones pasadas (ej. '✅ Problema registrado'). NUNCA uses esas confirmaciones "
-        "como evidencia de que una acción ya fue ejecutada en el turno ACTUAL. "
-        "Si el usuario pide registrar, crear o guardar algo en ESTE mensaje, SIEMPRE llamá la tool "
-        "correspondiente sin importar qué diga el historial previo. "
-        "El historial es solo contexto — no es prueba de ejecución."
-    )
-
-    # Iterative tool-calling loop — max 10 rounds
     for _ in range(10):
         try:
             response = client.messages.create(
                 model="claude-haiku-4-5",
                 max_tokens=4096,
-                system=system,
-                tools=get_tools(),
+                system=system_blocks,
+                tools=tools,
                 tool_choice={"type": "auto"},
                 messages=messages,
+                betas=["prompt-caching-2024-07-31"],
             )
         except anthropic.APIError as e:
             logger.error(f"Anthropic API error: {e}")
@@ -141,8 +103,9 @@ async def run_agent_chat(
                 if block.type == "tool_use":
                     logger.info(f"[Sol tool] {block.name}({block.input})")
                     tool_calls_log.append({"tool": block.name, "input": block.input})
-                    result = await execute_tool(block.name, block.input, db, user=current_user)
-                    logger.info(f"Tool result: {result[:200]}...")
+                    raw_result = await execute_tool(block.name, block.input, db, user=current_user)
+                    logger.debug(f"[Sol raw] {block.name}: {raw_result[:300]}")
+                    result = compress_tool_result(block.name, raw_result)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
@@ -174,3 +137,142 @@ async def run_agent_chat(
         "Por favor detallame qué quedó pendiente.",
         tool_calls_log,
     )
+
+
+async def _synthesize(
+    message: str,
+    results: list,
+    current_user: dict,
+    client: anthropic.Anthropic,
+) -> str:
+    """
+    Convert a list of StepResults into a conversational español rioplatense reply.
+
+    One Haiku call — minimal prompt, no history, no tool schemas.
+    """
+    lines = [f"Usuario pidió: {message}", "", "Operaciones ejecutadas:"]
+    for r in results:
+        if r["skipped"]:
+            status = "omitido"
+        elif r.get("error"):
+            status = "error"
+        else:
+            status = "ok"
+        lines.append(
+            f"- {r['tool']}({json.dumps(r['params'], ensure_ascii=False)}): "
+            f"{status} — {r['result'][:200]}"
+        )
+    user_content = "\n".join(lines)
+
+    synthesis_prompt = [
+        {
+            "type": "text",
+            "text": "Sos Sol. Respondé al usuario en español rioplatense confirmando qué se hizo. Sé conciso y amigable.",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+    resp = client.messages.create(
+        model="claude-haiku-4-5",
+        max_tokens=1024,
+        system=synthesis_prompt,
+        messages=[{"role": "user", "content": user_content}],
+        betas=["prompt-caching-2024-07-31"],
+    )
+    return "".join(b.text for b in resp.content if hasattr(b, "text"))
+
+
+# ── Core agent loop ───────────────────────────────────────────────────────────
+
+async def run_agent_chat(
+    message: str,
+    history: list[dict],
+    current_user: dict,
+    db: AsyncSession,
+) -> tuple[str, list[dict]]:
+    """
+    Run the Sol agent loop and return (response_text, tool_calls_log).
+
+    This is the single implementation shared by the web endpoint and the
+    Telegram webhook — guaranteeing identical behaviour on both channels.
+
+    Args:
+        message:      The new user message.
+        history:      Previous messages [{role, content}, ...] (<=20, oldest-first).
+        current_user: Auth dict from get_current_user / telegram_service.
+        db:           Async SQLAlchemy session.
+
+    Returns:
+        Tuple of (Sol's text reply, list of tool call records for logging).
+    """
+    settings = get_settings()
+
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+    # Build alternating message list (Claude requires strictly alternating roles)
+    messages: list[dict] = []
+    for h in history[-20:]:
+        role = h.get("role")
+        content = h.get("content")
+        if role in ("user", "assistant") and content:
+            if messages and messages[-1]["role"] == role:
+                # Merge consecutive same-role messages
+                messages[-1]["content"] += f"\n\n{content}"
+            else:
+                messages.append({"role": role, "content": content})
+
+    # Append the new user message — always as a new entry.
+    # NEVER merge into the last history message even if it is also role="user".
+    # History represents PAST turns (read-only context); the current `message`
+    # is always its own turn. Merging corrupts the turn boundary Claude uses to
+    # reason about what was already done (Bug A fix — see design doc).
+    messages.append({"role": "user", "content": message})
+
+    system = (
+        SYSTEM_PROMPT
+        + f"\n\nContexto actual: Estás asistiendo a {current_user['full_name']} "
+        f"de la empresa '{current_user['company_name']}'. "
+        "No necesitás preguntar el company_id ni el nombre de la empresa.\n"
+        "REGLA CRÍTICA DE HISTORIAL: El historial de conversación puede contener confirmaciones "
+        "de texto de acciones pasadas (ej. '✅ Problema registrado'). NUNCA uses esas confirmaciones "
+        "como evidencia de que una acción ya fue ejecutada en el turno ACTUAL. "
+        "Si el usuario pide registrar, crear o guardar algo en ESTE mensaje, SIEMPRE llamá la tool "
+        "correspondiente sin importar qué diga el historial previo. "
+        "El historial es solo contexto — no es prueba de ejecución."
+    )
+
+    system_blocks = [
+        {
+            "type": "text",
+            "text": system,
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+    tools = get_tools()
+    tools = tools[:-1] + [{**tools[-1], "cache_control": {"type": "ephemeral"}}]
+
+    # ── Plan-and-Execute routing ──────────────────────────────────────────────
+    plan = await build_plan(message, current_user, client)
+    if plan.get("mode") != "reactive":
+        results = await execute_plan(plan, db, current_user)
+        tool_calls_log = [
+            {"tool": r["tool"], "input": r["params"]}
+            for r in results
+            if not r["skipped"]
+        ]
+        text = await _synthesize(message, results, current_user, client)
+
+        # Increment usage counter (same as reactive path)
+        user_result = await db.execute(
+            select(UserModel).where(UserModel.id == current_user["id"])
+        )
+        user_obj = user_result.scalar_one_or_none()
+        if user_obj:
+            user_obj.message_count += 1
+            await db.commit()
+
+        return text, tool_calls_log
+
+    # ── Reactive fallback ─────────────────────────────────────────────────────
+    return await _reactive_loop(messages, system_blocks, tools, db, current_user, client)

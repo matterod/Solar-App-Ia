@@ -41,6 +41,10 @@ class ToolRegistry:
             } for t in self._tools.values()
         ]
 
+    def get_tool_catalog(self) -> List[Dict[str, Any]]:
+        """Returns tool names and descriptions only — no input_schema. For planner use."""
+        return [{"name": t.name, "description": t.description} for t in self._tools.values()]
+
     async def execute(self, tool_name: str, tool_input: dict, db: AsyncSession, user: Optional[Any] = None) -> str:
         """Executes a registered tool dynamically."""
         if tool_name not in self._tools:
@@ -168,6 +172,9 @@ registry.register(AgentTool(
 # Helper functions for the router
 def get_tools() -> List[Dict[str, Any]]:
     return registry.get_tool_schemas()
+
+def get_tool_catalog() -> List[Dict[str, Any]]:
+    return registry.get_tool_catalog()
 
 async def execute_tool(tool_name: str, tool_input: dict, db: AsyncSession, user: Optional[Any] = None) -> str:
     return await registry.execute(tool_name, tool_input, db, user=user)
