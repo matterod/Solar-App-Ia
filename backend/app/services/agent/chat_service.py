@@ -89,7 +89,6 @@ async def _reactive_loop(
                 tools=tools,
                 tool_choice={"type": "auto"},
                 messages=messages,
-                betas=["prompt-caching-2024-07-31"],
             )
         except anthropic.APIError as e:
             logger.error(f"Anthropic API error: {e}")
@@ -177,7 +176,6 @@ async def _synthesize(
         max_tokens=1024,
         system=synthesis_prompt,
         messages=[{"role": "user", "content": user_content}],
-        betas=["prompt-caching-2024-07-31"],
     )
     return "".join(b.text for b in resp.content if hasattr(b, "text"))
 
