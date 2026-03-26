@@ -40,9 +40,9 @@
   --info: #06b6d4;
 
   /* Surfaces */
-  --bg-primary: #ffffff;
-  --bg-secondary: var(--slate-50);
-  --bg-tertiary: var(--slate-100);
+  --bg-primary: #020617;
+  --bg-secondary: var(--slate-950);
+  --bg-tertiary: var(--slate-900);
   --bg-sidebar: var(--slate-900);
 
   /* Typography */
@@ -90,7 +90,7 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg-secondary);
+  background-color: #020617;
   color: var(--text-primary);
   min-height: 100vh;
 }
@@ -193,9 +193,5 @@ body {
 }
 
 .gradient-mesh {
-  background:
-    radial-gradient(at 20% 80%, rgb(14 165 233 / 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 20%, rgb(6 182 212 / 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgb(99 102 241 / 0.04) 0px, transparent 50%),
-    var(--bg-secondary);
+  background: linear-gradient(to bottom, #020617, #0f172a);
 }

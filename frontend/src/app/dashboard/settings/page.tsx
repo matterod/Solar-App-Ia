@@ -1,115 +1,133 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { auth, invitations, Invitation, team, TeamMember, plan as planApi, PlanUsage, telegram, TelegramStatus, TelegramLinkCode } from "@/services/api";
+import { toast } from "sonner";
+import { auth, invitations, Invitation, team, plan as planApi, telegram, TelegramLinkCode } from "@/services/api";
+import { queryKeys } from "@/lib/query-keys";
+import { handleApiError } from "@/lib/handle-api-error";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function SettingsPage() {
     const { logout } = useAuth();
-    const [user, setUser] = useState<{ email: string; full_name: string; role: string; company_name?: string | null; plan?: string | null } | null>(null);
-    const [pendingInvitations, setPendingInvitations] = useState<Invitation[]>([]);
-    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+    const queryClient = useQueryClient();
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteCategory, setInviteCategory] = useState("installer");
-    const [usage, setUsage] = useState<PlanUsage | null>(null);
-    const [tgStatus, setTgStatus] = useState<TelegramStatus | null>(null);
     const [tgCode, setTgCode] = useState<TelegramLinkCode | null>(null);
-    const [tgLoading, setTgLoading] = useState(false);
 
-    useEffect(() => {
-        auth.getMe().then(u => {
-            setUser(u);
-            if (u) {
-                fetchTeam();
-                planApi.usage().then(setUsage).catch(console.error);
-                telegram.status().then(setTgStatus).catch(console.error);
-                if (u.role === 'admin' || u.role === 'partner') {
-                    fetchInvitations();
-                }
-            }
-        }).catch(() => { });
-    }, []);
+    const { data: user } = useQuery({
+        queryKey: ["auth", "me"],
+        queryFn: () => auth.getMe(),
+    });
 
-    const fetchInvitations = () => {
-        invitations.list().then(setPendingInvitations).catch(console.error);
-    };
+    const { data: pendingInvitations = [] } = useQuery({
+        queryKey: queryKeys.invitations.all(),
+        queryFn: () => invitations.list(),
+        enabled: user?.role === "admin" || user?.role === "partner",
+    });
 
-    const fetchTeam = () => {
-        team.list().then(setTeamMembers).catch(console.error);
-    };
+    const { data: teamMembers = [] } = useQuery({
+        queryKey: queryKeys.team.all(),
+        queryFn: () => team.list(),
+    });
 
-    const handleInvite = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            await invitations.create({ email: inviteEmail, role: inviteCategory });
+    const { data: usage } = useQuery({
+        queryKey: queryKeys.plan.usage(),
+        queryFn: () => planApi.usage(),
+    });
+
+    const { data: tgStatus, refetch: refetchTgStatus } = useQuery({
+        queryKey: queryKeys.telegram.status(),
+        queryFn: () => telegram.status(),
+    });
+
+    const inviteMutation = useMutation({
+        mutationFn: (data: { email: string; role: string }) => invitations.create(data),
+        onSuccess: () => {
+            toast.success("Invitación enviada correctamente");
+            queryClient.invalidateQueries({ queryKey: queryKeys.invitations.all() });
             setInviteEmail("");
-            fetchInvitations();
-        } catch (error: any) {
-            alert("Error al enviar invitación: " + error.message);
-        }
-    };
+        },
+        onError: (e) => handleApiError(e),
+    });
 
-    const handleGenerateTgCode = async () => {
-        setTgLoading(true);
-        setTgCode(null);
-        try {
-            const result = await telegram.generateCode();
+    const cancelInviteMutation = useMutation({
+        mutationFn: (id: string) => invitations.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.invitations.all() });
+        },
+        onError: (e) => handleApiError(e),
+    });
+
+    const generateTgCodeMutation = useMutation({
+        mutationFn: () => telegram.generateCode(),
+        onSuccess: (result) => {
             setTgCode(result);
-        } catch { /* */ }
-        setTgLoading(false);
-    };
+        },
+        onError: (e) => handleApiError(e),
+    });
 
-    const handleUnlinkTg = async () => {
-        if (!confirm("¿Desvincular tu cuenta de Telegram?")) return;
-        try {
-            await telegram.unlink();
-            setTgStatus({ linked: false });
+    const unlinkTgMutation = useMutation({
+        mutationFn: () => telegram.unlink(),
+        onSuccess: () => {
+            refetchTgStatus();
             setTgCode(null);
-        } catch { /* */ }
+        },
+        onError: (e) => handleApiError(e),
+    });
+
+    const handleInvite = (e: React.FormEvent) => {
+        e.preventDefault();
+        inviteMutation.mutate({ email: inviteEmail, role: inviteCategory });
     };
 
-    const handleCancelInvite = async (id: string) => {
-        try {
-            await invitations.delete(id);
-            fetchInvitations();
-        } catch (error: any) {
-            alert("Error al cancelar invitación: " + error.message);
-        }
+    const handleGenerateTgCode = () => {
+        setTgCode(null);
+        generateTgCodeMutation.mutate();
+    };
+
+    const handleUnlinkTg = () => {
+        if (!confirm("¿Desvincular tu cuenta de Telegram?")) return;
+        unlinkTgMutation.mutate();
+    };
+
+    const handleCancelInvite = (id: string) => {
+        cancelInviteMutation.mutate(id);
     };
 
     return (
         <div className="p-4 md:p-6 lg:p-8 max-w-2xl">
             <div className="mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Configuración</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-100">Configuración</h1>
                 <p className="text-sm text-slate-500 mt-1">Ajustes de tu cuenta</p>
             </div>
 
             {user ? (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                    <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-6">
-                        <h2 className="text-base font-semibold text-slate-900 mb-4">Perfil</h2>
+                    <div className="bg-slate-900 rounded-2xl p-6 border border-white/10 mb-6">
+                        <h2 className="text-base font-semibold text-slate-100 mb-4">Perfil</h2>
                         <div className="flex items-center gap-4 mb-6">
                             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-white text-lg font-bold shadow-md shadow-sky-500/20">
                                 {user.full_name.slice(0, 2).toUpperCase()}
                             </div>
                             <div>
-                                <p className="font-semibold text-slate-900">{user.full_name}</p>
+                                <p className="font-semibold text-slate-100">{user.full_name}</p>
                                 <p className="text-sm text-slate-500">{user.email}</p>
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                            <div className="flex items-center justify-between py-2 border-t border-white/10">
                                 <span className="text-sm text-slate-500">Rol</span>
-                                <span className="text-sm font-medium text-slate-900 capitalize">{user.role}</span>
+                                <span className="text-sm font-medium text-slate-100 capitalize">{user.role}</span>
                             </div>
                             {user.company_name && (
-                                <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                                <div className="flex items-center justify-between py-2 border-t border-white/10">
                                     <span className="text-sm text-slate-500">Empresa</span>
-                                    <span className="text-sm font-medium text-slate-900 capitalize">{user.company_name}</span>
+                                    <span className="text-sm font-medium text-slate-100 capitalize">{user.company_name}</span>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                            <div className="flex items-center justify-between py-2 border-t border-white/10">
                                 <span className="text-sm text-slate-500">API Backend</span>
                                 <span className="text-sm font-medium text-emerald-600">Conectado ✓</span>
                             </div>
@@ -117,10 +135,10 @@ export default function SettingsPage() {
                     </div>
 
                     {usage && (
-                        <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-6">
+                        <div className="bg-slate-900 rounded-2xl p-6 border border-white/10 mb-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-base font-semibold text-slate-900">Tu Plan</h2>
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${usage.plan === 'pro' ? 'bg-gradient-to-r from-sky-400 to-sky-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                                <h2 className="text-base font-semibold text-slate-100">Tu Plan</h2>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${usage.plan === 'pro' ? 'bg-gradient-to-r from-sky-400 to-sky-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
                                     {usage.plan}
                                 </span>
                             </div>
@@ -134,13 +152,13 @@ export default function SettingsPage() {
                                 ].map((item, i) => (
                                     <div key={i}>
                                         <div className="flex justify-between text-sm mb-1.5">
-                                            <span className="text-slate-600 font-medium">{item.label}</span>
-                                            <span className="text-slate-900">
+                                            <span className="text-slate-400 font-medium">{item.label}</span>
+                                            <span className="text-slate-100">
                                                 {item.data.limit === null ? "Ilimitado" : `${item.data.used} / ${item.data.limit}`}
                                             </span>
                                         </div>
                                         {item.data.limit !== null && (
-                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
                                                 <div 
                                                     className={`h-full rounded-full transition-all duration-500 ${item.data.used >= item.data.limit ? 'bg-red-500' : 'bg-sky-500'}`}
                                                     style={{ width: `${Math.min((item.data.used / item.data.limit) * 100, 100)}%` }}
@@ -154,7 +172,7 @@ export default function SettingsPage() {
                             {usage.plan === 'demo' && (
                                 <div className="mt-6">
                                     <button 
-                                        onClick={() => window.open("https://wa.me/[TU_NUMERO_AQUI]?text=Hola,%20quiero%20actualizar%20mi%20plan%20a%20Pro", "_blank")}
+                                        onClick={() => window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || ''}?text=Hola,%20quiero%20actualizar%20mi%20plan%20a%20Pro`, "_blank")}
                                         className="w-full py-2.5 bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity"
                                     >
                                         Actualizar a Pro ⚡
@@ -165,8 +183,8 @@ export default function SettingsPage() {
                     )}
 
                     {(user.role === 'admin' || user.role === 'partner') && (
-                        <div className="bg-white rounded-2xl p-6 border border-slate-100 mb-6">
-                            <h2 className="text-base font-semibold text-slate-900 mb-4">Equipo</h2>
+                        <div className="bg-slate-900 rounded-2xl p-6 border border-white/10 mb-6">
+                            <h2 className="text-base font-semibold text-slate-100 mb-4">Equipo</h2>
                             <p className="text-sm text-slate-500 mb-4">
                                 Invita a otros socios o empleados a unirse a tu empresa.
                             </p>
@@ -176,12 +194,12 @@ export default function SettingsPage() {
                                     type="email"
                                     required
                                     placeholder="correo@ejemplo.com"
-                                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
+                                    className="flex-1 bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                                     value={inviteEmail}
                                     onChange={(e) => setInviteEmail(e.target.value)}
                                 />
                                 <select
-                                    className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
+                                    className="bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                                     value={inviteCategory}
                                     onChange={(e) => setInviteCategory(e.target.value)}
                                 >
@@ -200,12 +218,12 @@ export default function SettingsPage() {
 
                             {pendingInvitations.length > 0 && (
                                 <div>
-                                    <h3 className="text-sm font-medium text-slate-900 mb-3">Invitaciones pendientes</h3>
+                                    <h3 className="text-sm font-medium text-slate-100 mb-3">Invitaciones pendientes</h3>
                                     <div className="space-y-2">
                                         {pendingInvitations.map(inv => (
-                                            <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50">
+                                            <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-slate-800/50">
                                                 <div>
-                                                    <p className="text-sm font-medium text-slate-700">{inv.email}</p>
+                                                    <p className="text-sm font-medium text-slate-300">{inv.email}</p>
                                                     <p className="text-xs text-slate-500 capitalize">Rol: {inv.role}</p>
                                                 </div>
                                                 <button
@@ -226,16 +244,16 @@ export default function SettingsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-white rounded-2xl p-6 border border-slate-100 mb-6"
+                        className="bg-slate-900 rounded-2xl p-6 border border-white/10 mb-6"
                     >
-                        <h2 className="text-base font-semibold text-slate-900 mb-4">Tu Equipo</h2>
+                        <h2 className="text-base font-semibold text-slate-100 mb-4">Tu Equipo</h2>
                         
                         {/* Mobile: Card layout */}
                         <div className="md:hidden space-y-3">
                             {teamMembers.map((member) => (
-                                <div key={member.id} className="border border-slate-100 rounded-xl p-4">
+                                <div key={member.id} className="border border-white/10 rounded-xl p-4">
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="font-medium text-slate-900 text-sm">{member.full_name}</p>
+                                        <p className="font-medium text-slate-100 text-sm">{member.full_name}</p>
                                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider ${member.is_active
                                             ? "bg-emerald-100 text-emerald-700"
                                             : "bg-red-100 text-red-700"
@@ -244,7 +262,7 @@ export default function SettingsPage() {
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500 mb-1">{member.email}</p>
-                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-semibold uppercase tracking-wider">
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
                                         {member.role === 'admin' ? 'Administrador' :
                                             member.role === 'partner' ? 'Socio' :
                                                 member.role === 'installer' ? 'Instalador' :
@@ -258,20 +276,20 @@ export default function SettingsPage() {
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead>
-                                    <tr className="text-slate-500 border-b border-slate-100">
+                                    <tr className="text-slate-500 border-b border-white/10">
                                         <th className="pb-3 font-medium">Nombre</th>
                                         <th className="pb-3 font-medium">Email</th>
                                         <th className="pb-3 font-medium">Rol</th>
                                         <th className="pb-3 font-medium">Estado</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
+                                <tbody className="divide-y divide-white/10">
                                     {teamMembers.map((member) => (
-                                        <tr key={member.id} className="hover:bg-slate-50/50 transition-colors pointer-events-none">
-                                            <td className="py-4 font-medium text-slate-900">{member.full_name}</td>
-                                            <td className="py-4 text-slate-600">{member.email}</td>
+                                        <tr key={member.id} className="hover:bg-slate-800/50 transition-colors pointer-events-none">
+                                            <td className="py-4 font-medium text-slate-100">{member.full_name}</td>
+                                            <td className="py-4 text-slate-400">{member.email}</td>
                                             <td className="py-4">
-                                                <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-semibold uppercase tracking-wider">
+                                                <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
                                                     {member.role === 'admin' ? 'Administrador' :
                                                         member.role === 'partner' ? 'Socio' :
                                                             member.role === 'installer' ? 'Instalador' :
@@ -298,7 +316,7 @@ export default function SettingsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
-                        className="bg-white rounded-2xl p-6 border border-slate-100 mb-6"
+                        className="bg-slate-900 rounded-2xl p-6 border border-white/10 mb-6"
                     >
                         <div className="flex items-center gap-3 mb-4">
                             {/* Telegram plane icon */}
@@ -308,7 +326,7 @@ export default function SettingsPage() {
                                 </svg>
                             </div>
                             <div>
-                                <h2 className="text-base font-semibold text-slate-900">Telegram</h2>
+                                <h2 className="text-base font-semibold text-slate-100">Telegram</h2>
                                 <p className="text-xs text-slate-500">Chateá con Sol desde Telegram</p>
                             </div>
                             {tgStatus?.linked && (
@@ -320,15 +338,15 @@ export default function SettingsPage() {
 
                         {tgStatus?.linked ? (
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between py-2 border-t border-slate-100">
+                                <div className="flex items-center justify-between py-2 border-t border-white/10">
                                     <span className="text-sm text-slate-500">Usuario</span>
-                                    <span className="text-sm font-medium text-slate-900">
+                                    <span className="text-sm font-medium text-slate-100">
                                         {tgStatus.telegram_username ? `@${tgStatus.telegram_username}` : "Vinculado"}
                                     </span>
                                 </div>
                                 <button
                                     onClick={handleUnlinkTg}
-                                    className="w-full py-2 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-red-500 hover:border-red-200 transition-colors"
+                                    className="w-full py-2 rounded-xl border border-white/10 text-sm text-slate-500 hover:bg-slate-800 hover:text-red-500 hover:border-red-200 transition-colors"
                                 >
                                     Desvincular Telegram
                                 </button>
@@ -342,17 +360,17 @@ export default function SettingsPage() {
                                 {!tgCode ? (
                                     <button
                                         onClick={handleGenerateTgCode}
-                                        disabled={tgLoading}
+                                        disabled={generateTgCodeMutation.isPending}
                                         className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 text-white text-sm font-medium shadow-sm shadow-sky-500/20 hover:from-sky-400 hover:to-sky-500 disabled:opacity-60 transition-all"
                                     >
-                                        {tgLoading ? "Generando..." : "Generar Código de Vinculación"}
+                                        {generateTgCodeMutation.isPending ? "Generando..." : "Generar Código de Vinculación"}
                                     </button>
                                 ) : (
                                     <div className="space-y-3">
                                         {/* Code display */}
-                                        <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center">
+                                        <div className="rounded-xl bg-slate-800 border border-white/10 p-4 text-center">
                                             <p className="text-xs text-slate-400 mb-1">Tu código (válido 10 min)</p>
-                                            <p className="text-3xl font-bold tracking-[0.3em] text-slate-900 font-mono">
+                                            <p className="text-3xl font-bold tracking-[0.3em] text-slate-100 font-mono">
                                                 {tgCode.code}
                                             </p>
                                         </div>
@@ -370,14 +388,14 @@ export default function SettingsPage() {
                                                 </li>
                                                 <li>Enviá el siguiente mensaje:</li>
                                             </ol>
-                                            <div className="mt-2 rounded-lg bg-white border border-sky-200 px-4 py-2 font-mono text-sm text-slate-800 select-all">
+                                            <div className="mt-2 rounded-lg bg-slate-900 border border-sky-200 px-4 py-2 font-mono text-sm text-slate-200 select-all">
                                                 /vincular {tgCode.code}
                                             </div>
                                         </div>
 
                                         <button
                                             onClick={handleGenerateTgCode}
-                                            className="text-xs text-slate-400 hover:text-slate-600 underline w-full text-center"
+                                            className="text-xs text-slate-400 hover:text-slate-400 underline w-full text-center"
                                         >
                                             Generar nuevo código
                                         </button>
@@ -387,8 +405,8 @@ export default function SettingsPage() {
                         )}
                     </motion.div>
 
-                    <div className="bg-white rounded-2xl p-6 border border-slate-100">
-                        <h2 className="text-base font-semibold text-slate-900 mb-4">Acciones</h2>
+                    <div className="bg-slate-900 rounded-2xl p-6 border border-white/10">
+                        <h2 className="text-base font-semibold text-slate-100 mb-4">Acciones</h2>
                         <button
                             onClick={() => logout()}
                             className="px-4 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
@@ -398,10 +416,10 @@ export default function SettingsPage() {
                     </div>
                 </motion.div>
             ) : (
-                <div className="bg-white rounded-2xl p-6 border border-slate-100 animate-pulse">
-                    <div className="h-5 w-32 bg-slate-200 rounded mb-4" />
-                    <div className="h-14 w-14 bg-slate-200 rounded-2xl mb-4" />
-                    <div className="h-4 w-48 bg-slate-100 rounded" />
+                <div className="bg-slate-900 rounded-2xl p-6 border border-white/10 animate-pulse">
+                    <div className="h-5 w-32 bg-slate-700 rounded mb-4" />
+                    <div className="h-14 w-14 bg-slate-700 rounded-2xl mb-4" />
+                    <div className="h-4 w-48 bg-slate-800 rounded" />
                 </div>
             )}
         </div>

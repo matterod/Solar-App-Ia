@@ -54,7 +54,7 @@ export default function SuperAdminPage() {
     return (
         <div className="p-4 md:p-6 lg:p-8 max-w-6xl">
             <div className="mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Panel de SuperAdmin</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-100">Panel de SuperAdmin</h1>
                 <p className="text-sm text-slate-500 mt-1">Gestión global de empresas y usuarios</p>
             </div>
 
@@ -66,7 +66,7 @@ export default function SuperAdminPage() {
                         { label: "Planes Demo", value: stats.demo_count, color: "text-indigo-600" },
                         { label: "Planes Pro", value: stats.pro_count, color: "text-purple-600" },
                     ].map((s, i) => (
-                        <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                        <div key={i} className="bg-slate-900 rounded-2xl p-5 border border-white/10 shadow-sm">
                             <p className="text-sm text-slate-500 font-medium mb-1">{s.label}</p>
                             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
                         </div>
@@ -74,17 +74,17 @@ export default function SuperAdminPage() {
                 </div>
             )}
 
-            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900 mb-4">Empresas Registradas</h2>
+            <div className="bg-slate-900 rounded-2xl p-4 sm:p-6 border border-white/10 shadow-sm">
+                <h2 className="text-lg font-semibold text-slate-100 mb-4">Empresas Registradas</h2>
 
                 {/* Mobile: Card layout */}
                 <div className="md:hidden space-y-3">
                     {companies.map((company) => (
-                        <div key={company.id} className="border border-slate-100 rounded-xl p-4">
+                        <div key={company.id} className="border border-white/10 rounded-xl p-4">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-medium text-slate-900">{company.name}</h3>
+                                <h3 className="font-medium text-slate-100">{company.name}</h3>
                                 <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider ${
-                                    company.plan === 'pro' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
+                                    company.plan === 'pro' ? 'bg-sky-100 text-sky-700' : 'bg-slate-800 text-slate-400'
                                 }`}>
                                     {company.plan}
                                 </span>
@@ -111,7 +111,7 @@ export default function SuperAdminPage() {
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead>
-                            <tr className="text-slate-500 border-b border-slate-100">
+                            <tr className="text-slate-500 border-b border-white/10">
                                 <th className="pb-3 font-medium">Empresa</th>
                                 <th className="pb-3 font-medium">Usuarios</th>
                                 <th className="pb-3 font-medium">Estado</th>
@@ -119,11 +119,11 @@ export default function SuperAdminPage() {
                                 <th className="pb-3 font-medium text-right w-[150px]">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className="divide-y divide-white/10">
                             {companies.map((company) => (
-                                <tr key={company.id} className="hover:bg-slate-50/50 transition-colors h-16">
-                                    <td className="py-4 font-medium text-slate-900">{company.name}</td>
-                                    <td className="py-4 text-slate-600">{company.user_count}</td>
+                                <tr key={company.id} className="hover:bg-slate-800/50 transition-colors h-16">
+                                    <td className="py-4 font-medium text-slate-100">{company.name}</td>
+                                    <td className="py-4 text-slate-400">{company.user_count}</td>
                                     <td className="py-4">
                                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider ${
                                             company.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
@@ -134,7 +134,7 @@ export default function SuperAdminPage() {
                                     <td className="py-4 w-[100px]">
                                         <div className="flex items-center h-full">
                                             <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider text-center min-w-[55px] ${
-                                                company.plan === 'pro' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
+                                                company.plan === 'pro' ? 'bg-sky-100 text-sky-700' : 'bg-slate-800 text-slate-400'
                                             }`}>
                                                 {company.plan}
                                             </span>

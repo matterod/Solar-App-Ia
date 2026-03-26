@@ -20,8 +20,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${API_URL}/api/v1${path}`, { ...options, headers });
-
+    let res: Response;
+    try {
+        res = await fetch(`${API_URL}/api/v1${path}`, { ...options, headers });
+    } catch (networkError) {
+        throw new Error("No se pudo conectar con el servidor. Asegurate de que el backend (FastAPI) esté corriendo en el puerto 8000.");
+    }
     if (res.status === 401) {
         // Token auth failed
         throw new Error("Sesión expirada");

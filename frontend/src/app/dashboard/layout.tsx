@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Toaster } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import InvitationBanner from "@/components/InvitationBanner";
+import { DashboardProviders } from "./providers";
 
 export default function DashboardLayout({
     children,
@@ -27,7 +29,7 @@ export default function DashboardLayout({
 
     if (isAuthenticating) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+            <div className="flex min-h-screen items-center justify-center bg-slate-950">
                 <div className="flex flex-col items-center gap-3">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600"></div>
                 </div>
@@ -41,17 +43,20 @@ export default function DashboardLayout({
     }
 
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex min-h-screen bg-slate-950 text-slate-50">
+            <Toaster theme="dark" richColors />
             <Sidebar />
             <main className="flex-1 md:ml-64">
-                <div className="gradient-mesh min-h-screen pt-14 md:pt-0">
+                <div className="min-h-screen pt-14 md:pt-0">
                     <InvitationBanner />
                     <motion.div
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, ease: "easeOut" }}
                     >
-                        {children}
+                        <DashboardProviders>
+                            {children}
+                        </DashboardProviders>
                     </motion.div>
                 </div>
             </main>

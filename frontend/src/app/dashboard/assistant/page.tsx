@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { agent, plan as planApi, PlanUsage } from "@/services/api";
+import { agent, plan as planApi } from "@/services/api";
+import { queryKeys } from "@/lib/query-keys";
 
 interface Message {
     id: string;
@@ -24,11 +27,16 @@ const suggestions = [
 
 export default function AssistantPage() {
     const { user, dbUser, logout } = useAuth();
+    const queryClient = useQueryClient();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
-    const [usage, setUsage] = useState<PlanUsage | null>(null);
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const { data: usage } = useQuery({
+        queryKey: queryKeys.plan.usage(),
+        queryFn: () => planApi.usage(),
+    });
 
     // Speech Recognition State
     const [isListening, setIsListening] = useState(false);
@@ -104,7 +112,7 @@ export default function AssistantPage() {
                     console.error(e);
                 }
             } else {
-                alert("Tu navegador no soporta reconocimiento de voz nativo.");
+                toast.error("Tu navegador no soporta reconocimiento de voz nativo.");
             }
         }
     };
@@ -121,8 +129,8 @@ export default function AssistantPage() {
                 }));
                 setMessages(withDates);
                 return;
-            } catch (e) {
-                console.error("Failed to parse history", e);
+            } catch {
+                // Silently discard corrupt session history — not an API error
             }
         }
 
@@ -135,11 +143,6 @@ export default function AssistantPage() {
                 timestamp: new Date(),
             },
         ]);
-    }, []);
-
-    // Fetch plan usage on mount
-    useEffect(() => {
-        planApi.usage().then(setUsage).catch(console.error);
     }, []);
 
     // Save history to session storage when messages update
@@ -166,9 +169,9 @@ export default function AssistantPage() {
         try {
             const data = await agent.chat(text, currentHistory);
 
-            // Optimistic update of AI limit counter
+            // Refresh AI limit counter after successful chat
             if (usage && usage.plan === 'demo') {
-                setUsage(prev => prev ? { ...prev, ai_questions: { ...prev.ai_questions, used: prev.ai_questions.used + 1 } } : prev);
+                queryClient.invalidateQueries({ queryKey: queryKeys.plan.usage() });
             }
 
             const aiMessage: Message = {
@@ -200,14 +203,14 @@ export default function AssistantPage() {
     return (
         <div className="-mt-14 md:mt-0 flex flex-col h-screen">
             {/* Header */}
-            <div className="shrink-0 pl-14 pr-3 md:px-6 py-0 md:py-4 h-14 md:h-auto flex items-center border-b border-slate-200 bg-white/90 backdrop-blur-md z-10">
+            <div className="shrink-0 pl-14 pr-3 md:px-6 py-0 md:py-4 h-14 md:h-auto flex items-center border-b border-white/10 bg-slate-900/90 backdrop-blur-md z-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-md shadow-sky-500/20 shrink-0">
                             <span className="text-base sm:text-lg">☀️</span>
                         </div>
                         <div className="min-w-0">
-                            <h1 className="text-sm sm:text-base font-semibold text-slate-900">Asistente Sol</h1>
+                            <h1 className="text-sm sm:text-base font-semibold text-slate-100">Asistente Sol</h1>
                             <p className="text-[10px] sm:text-xs text-slate-500 flex items-center gap-1.5">
                                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 En línea · Claude AI
@@ -245,7 +248,7 @@ export default function AssistantPage() {
                     <div className="w-full bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">
                         <span>Has alcanzado el límite de consultas de IA en el plan Demo.</span>
                         <button 
-                            onClick={() => window.open("https://wa.me/[TU_NUMERO_AQUI]?text=Hola,%20quiero%20actualizar%20mi%20plan%20a%20Pro", "_blank")}
+                            onClick={() => window.open(`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || ''}?text=Hola,%20quiero%20actualizar%20mi%20plan%20a%20Pro`, "_blank")}
                             className="text-red-700 underline font-medium"
                         >
                             Actualizar a Pro
@@ -265,12 +268,12 @@ export default function AssistantPage() {
                                 className={`max-w-[90%] sm:max-w-[75%] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm leading-relaxed
                   ${msg.role === "user"
                                         ? "bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-md shadow-sky-500/15"
-                                        : "bg-white border border-slate-100 text-slate-700 shadow-sm"
+                                        : "bg-slate-900 border border-white/10 text-slate-300 shadow-sm"
                                     }`}
                             >
                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                                 {msg.toolCalls && msg.toolCalls.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-slate-100">
+                                    <div className="mt-2 pt-2 border-t border-white/10">
                                         <p className="text-[10px] text-slate-400 mb-1">Herramientas usadas:</p>
                                         {msg.toolCalls.map((tc, i) => (
                                             <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded bg-sky-50 text-[10px] text-sky-700 mr-1">
@@ -294,7 +297,7 @@ export default function AssistantPage() {
                         animate={{ opacity: 1 }}
                         className="flex justify-start"
                     >
-                        <div className="bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm">
+                        <div className="bg-slate-900 border border-white/10 rounded-2xl px-4 py-3 shadow-sm">
                             <div className="flex gap-1.5 items-center">
                                 <span className="h-2 w-2 rounded-full bg-sky-400 animate-bounce [animation-delay:0ms]" />
                                 <span className="h-2 w-2 rounded-full bg-sky-400 animate-bounce [animation-delay:150ms]" />
@@ -323,7 +326,7 @@ export default function AssistantPage() {
                                 onClick={() => sendMessage(s)}
                                 disabled={limitReached || false}
                                 className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                                    limitReached ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed" : "bg-sky-50 border-sky-100 text-sky-700 hover:bg-sky-100 hover:border-sky-200"
+                                    limitReached ? "bg-slate-800 border-white/10 text-slate-400 cursor-not-allowed" : "bg-sky-50 border-sky-100 text-sky-700 hover:bg-sky-100 hover:border-sky-200"
                                 }`}
                             >
                                 {s}
@@ -333,7 +336,7 @@ export default function AssistantPage() {
                 </motion.div>
             )}
 
-            <div className="shrink-0 p-2.5 sm:p-4 border-t border-slate-200 bg-white/70 backdrop-blur-md">
+            <div className="shrink-0 p-2.5 sm:p-4 border-t border-white/10 bg-slate-900/70 backdrop-blur-md">
                 {usage && usage.plan === 'demo' && (
                     <div className="text-[10px] text-slate-500 mb-2 pl-2">
                         {usage.ai_questions.used} / {usage.ai_questions.limit} consultas usadas
@@ -352,18 +355,18 @@ export default function AssistantPage() {
                         onChange={(e) => setInput(e.target.value)}
                         disabled={limitReached || false}
                         placeholder={limitReached ? "Actualizá a Pro para seguir usando Sol" : isListening ? "Escuchando... Hablá ahora" : "Escribe tu mensaje a Sol..."}
-                        className={`flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
-                            limitReached ? "bg-slate-100 cursor-not-allowed" :
-                            isListening ? "bg-red-50 border-red-200 focus:border-red-300" : "bg-slate-50 border-slate-200 focus:border-sky-300"
+                        className={`flex-1 min-w-0 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border text-sm text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all ${
+                            limitReached ? "bg-slate-800 cursor-not-allowed" :
+                            isListening ? "bg-red-50 border-red-200 focus:border-red-300" : "bg-slate-800 border-white/10 focus:border-sky-300"
                         }`}
                     />
                     <button
                         type="button"
                         onClick={toggleListening}
                         disabled={limitReached || false}
-                        className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center
-                            ${limitReached ? "opacity-50 cursor-not-allowed bg-slate-100 border-slate-200" :
-                              isListening ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-white border-slate-200'}
+                        className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border text-slate-600 hover:bg-slate-800 transition-all flex items-center justify-center
+                            ${limitReached ? "opacity-50 cursor-not-allowed bg-slate-800 border-white/10" :
+                              isListening ? 'bg-red-100 border-red-300 text-red-600 animate-pulse' : 'bg-slate-900 border-white/10'}
                         `}
                         title="Dictar por voz"
                     >

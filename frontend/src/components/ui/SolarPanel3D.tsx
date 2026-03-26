@@ -6,78 +6,75 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 
 function Model() {
-  // ATENCIÓN: Esto va a buscar el archivo en frontend/public/solar-panel.glb
-  const { scene } = useGLTF("/solar-panel.glb");
+  const { scene } = useGLTF("/solar-panel-optimized.glb");
   const modelRef = useRef<THREE.Group>(null);
-
-  // Acá es donde pasa la magia matemática de la rotación
-  useFrame((state, delta) => {
-    if (modelRef.current) {
-      // Modificá el 0.2 acá si querés que rote más rápido o más lento
-      modelRef.current.rotation.y += delta * 0.2; 
-    }
-  });
-
-  return (
-    <primitive 
-        ref={modelRef} 
-        object={scene} 
-        // Podés achicarlo o agrandarlo cambiando el scale
-        scale={2.5} 
-    />
-  );
-}
-
-// Un cubo de neón giratorio mientras carga el archivo pesado
-function Loader() {
-  const meshRef = useRef<THREE.Mesh>(null);
   
+  // Relojito interno para nuestra animación pre calculada (en segundos)
+  const time = useRef(0);
+  const duration = 4.5; // Animación de 4 segundos y medio para que sea súper majestuosa
+
+  // useFrame corre a 60FPS. 
   useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x += delta;
-      meshRef.current.rotation.y += delta;
+    if (modelRef.current && time.current < duration) {
+      time.current += delta;
+      
+      // t va matemáticamente de 0 a 1 en el transcurso de los 2.5 segundos
+      const t = Math.min(time.current / duration, 1);
+      
+      // Función matemática: "Ease In-Out Quart"
+      // Arrastra despacio, explota rotando a máxima velocidad en el centro, y se estaciona como seda.
+      const ease = t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+      
+      // 1. Desplazamiento: Vuela desde X=-25 (de los re confines) hacia X=3.5 (clavado al lado derecho)
+      modelRef.current.position.x = -25 + (3.5 - (-25)) * ease;
+      
+      // 2. Rotación: Rota salvajemente desde Y=15 (muchísimas vueltas) hacia Y=-0.6 (frente)
+      modelRef.current.rotation.y = 15 + (-0.6 - 15) * ease;
     }
   });
 
+  // Estado Inicial: Modificamos la Y y la pasamos de -1 a 0.2 para que el panel flote notablemente "más arriba"
   return (
-    <mesh ref={meshRef}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="#0ea5e9" wireframe />
-    </mesh>
+    <group ref={modelRef} position={[-25, 0.2, 0]} rotation={[0, 15, 0]}>
+      {/* Al poner el Center ADENTRO del grupo que rota, 
+          calcula el centro geométrico de la malla sin importar si en 
+          Blender estaba descentrado. Así gira sobre su propio eje. */}
+      <Center>
+        <primitive 
+            object={scene} 
+            scale={0.07} 
+        />
+      </Center>
+    </group>
   );
 }
 
 export function SolarPanel3D() {
   return (
-    <div className="w-full h-[400px] md:h-[600px] cursor-grab active:cursor-grabbing">
-      {/* El Canvas es literalmente tu "Ventana al 3D" en React */}
-      <Canvas camera={{ position: [0, 2, 8], fov: 45 }}>
-        <Suspense fallback={<Loader />}>
-          {/* Environment es clave: ilumina el panel con un entorno realista HDRI invisible */}
+    // Transformamos el recuadro a pantalla completa (inset-0 w-full h-full)
+    // Desactivamos los eventos de mouse (pointer-events-none) para que sea un fondo 100% pasivo
+    <div 
+        className="absolute inset-0 w-full h-[60vh] lg:h-full z-0 opacity-60 lg:opacity-100 pointer-events-none mix-blend-screen overflow-hidden"
+        style={{ WebkitMaskImage: "radial-gradient(ellipse at center right, black 40%, transparent 100%)" }}
+    >
+      <Canvas 
+        camera={{ position: [0, 1, 8], fov: 45 }}
+        dpr={[1, 2]} // Optimización para pantallas retina
+        gl={{ powerPreference: "high-performance" }} // Obliga al navegador a usar aceleración gráfica dura
+      >
+        <Suspense fallback={null}>
           <Environment preset="city" />
           <ambientLight intensity={0.5} />
           <directionalLight position={[10, 10, 5]} intensity={1} />
           
-          <Center>
-            {/* Float le da ese movimiento "flotante" hiper premium estilo Apple */}
-            <Float 
-                speed={2} 
-                rotationIntensity={0.2} 
-                floatIntensity={0.8} 
-            >
-              <Model />
-            </Float>
-          </Center>
-
-          {/* Te dejé pre-configurados los controles orbitales restringidos para que 
-              el usuario pueda moverlo con el mouse pero no desarmar la escena */}
-          <OrbitControls 
-            enableZoom={false} 
-            enablePan={false}
-            autoRotate={false} 
-            maxPolarAngle={Math.PI / 1.5} 
-            minPolarAngle={Math.PI / 6}
-          />
+          {/* ELIMINADO EL CENTER GLOBAL PARA NO PELEAR CON LA MATEMÁTICA LOCAL */}
+          <Float 
+              speed={2} 
+              rotationIntensity={0.2} 
+              floatIntensity={0.5} 
+          >
+            <Model />
+          </Float>
         </Suspense>
       </Canvas>
     </div>
