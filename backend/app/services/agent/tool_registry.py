@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.agent.schema_inspector import SCHEMA_INSPECTOR_TOOL, PREVIEW_TABLE_DATA_TOOL, describe_database_schema, preview_table_data
 from app.services.agent.crud_tools import CRUD_TOOLS, create_record, update_record, delete_record, search_records
 from app.services.agent.problem_service import ADD_PROBLEM_TOOL, add_problem
+from app.services.agent.task_tools import (
+    CREATE_TASK_TOOL, COMPLETE_TASK_TOOL, LIST_TASKS_TOOL,
+    handle_create_task, handle_complete_task, handle_list_tasks,
+)
 from app.services.dashboard_service import GET_DASHBOARD_STATS_TOOL, get_dashboard_stats
 from app.services.inventory_service import UPDATE_STOCK_TOOL, update_stock
 from app.services.maintenance_service import SCHEDULE_MAINTENANCE_TOOL, GET_UPCOMING_MAINTENANCE_TOOL, schedule_maintenance, get_upcoming_maintenance
@@ -167,6 +171,31 @@ registry.register(AgentTool(
     category="knowledge_base",
     input_schema=ADD_PROBLEM_TOOL["input_schema"],
     handler=add_problem
+))
+
+# Register Task Tools
+registry.register(AgentTool(
+    name=CREATE_TASK_TOOL["name"],
+    description=CREATE_TASK_TOOL["description"],
+    category="tasks",
+    input_schema=CREATE_TASK_TOOL["input_schema"],
+    handler=handle_create_task
+))
+
+registry.register(AgentTool(
+    name=COMPLETE_TASK_TOOL["name"],
+    description=COMPLETE_TASK_TOOL["description"],
+    category="tasks",
+    input_schema=COMPLETE_TASK_TOOL["input_schema"],
+    handler=handle_complete_task
+))
+
+registry.register(AgentTool(
+    name=LIST_TASKS_TOOL["name"],
+    description=LIST_TASKS_TOOL["description"],
+    category="tasks",
+    input_schema=LIST_TASKS_TOOL["input_schema"],
+    handler=handle_list_tasks
 ))
 
 # Helper functions for the router

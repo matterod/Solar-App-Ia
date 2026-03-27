@@ -13,11 +13,27 @@ echo "==> Pushing image..."
 docker push "$IMAGE"
 
 echo "==> Updating Cloud Run..."
-ANTHROPIC_KEY=$(grep ANTHROPIC_API_KEY .env | cut -d '=' -f2-)
+
+# Write env vars to a temp YAML file — avoids escaping issues with special chars (e.g. CORS_ORIGINS has brackets/quotes)
+ENV_FILE=$(mktemp /tmp/solar-erp-env-XXXXXX.yaml)
+trap "rm -f $ENV_FILE" EXIT
+
+CORS_ORIGINS_VAL=$(grep ^CORS_ORIGINS .env | cut -d '=' -f2-)
+
+cat > "$ENV_FILE" <<EOF
+ANTHROPIC_API_KEY: $(grep ^ANTHROPIC_API_KEY .env | cut -d '=' -f2-)
+TELEGRAM_BOT_TOKEN: $(grep ^TELEGRAM_BOT_TOKEN .env | cut -d '=' -f2-)
+TELEGRAM_WEBHOOK_SECRET: $(grep ^TELEGRAM_WEBHOOK_SECRET .env | cut -d '=' -f2-)
+DATABASE_URL: $(grep ^DATABASE_URL .env | cut -d '=' -f2-)
+SECRET_KEY: $(grep ^SECRET_KEY .env | cut -d '=' -f2-)
+CORS_ORIGINS: '$CORS_ORIGINS_VAL'
+INTERNAL_API_SECRET: $(grep ^INTERNAL_API_SECRET .env | cut -d '=' -f2-)
+EOF
+
 gcloud run services update "$SERVICE" \
   --region="$REGION" \
   --project="$PROJECT" \
   --image="$IMAGE" \
-  --set-env-vars "ANTHROPIC_API_KEY=$ANTHROPIC_KEY"
+  --env-vars-file="$ENV_FILE"
 
 echo "==> Done."

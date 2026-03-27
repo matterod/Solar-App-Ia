@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
 
+    # Internal API
+    internal_api_secret: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = False
