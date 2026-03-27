@@ -5,9 +5,7 @@ Used by both the web API (routers/agent.py) and the Telegram webhook
 (routers/telegram.py) so the exact same AI behaviour runs in both channels.
 """
 
-import json
 import logging
-from typing import Optional
 
 import anthropic
 from sqlalchemy import select
@@ -15,8 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.models.user import User as UserModel
-from app.services.agent.executor import execute_plan
-from app.services.agent.planner import build_plan
 from app.services.agent.tool_registry import get_tools, execute_tool
 from app.services.agent.compression import compress_tool_result
 
@@ -145,48 +141,6 @@ async def _reactive_loop(
     )
 
 
-async def _synthesize(
-    message: str,
-    results: list,
-    current_user: dict,
-    client: anthropic.Anthropic,
-) -> str:
-    """
-    Convert a list of StepResults into a conversational español rioplatense reply.
-
-    One Haiku call — minimal prompt, no history, no tool schemas.
-    """
-    lines = [f"Usuario pidió: {message}", "", "Operaciones ejecutadas:"]
-    for r in results:
-        if r["skipped"]:
-            status = "omitido"
-        elif r.get("error"):
-            status = "error"
-        else:
-            status = "ok"
-        lines.append(
-            f"- {r['tool']}({json.dumps(r['params'], ensure_ascii=False)}): "
-            f"{status} — {r['result'][:200]}"
-        )
-    user_content = "\n".join(lines)
-
-    synthesis_prompt = [
-        {
-            "type": "text",
-            "text": "Sos Sol. Respondé al usuario en español rioplatense confirmando qué se hizo. Sé conciso y amigable.",
-            "cache_control": {"type": "ephemeral"},
-        }
-    ]
-
-    resp = client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=1024,
-        system=synthesis_prompt,
-        messages=[{"role": "user", "content": user_content}],
-    )
-    return "".join(b.text for b in resp.content if hasattr(b, "text"))
-
-
 # ── Core agent loop ───────────────────────────────────────────────────────────
 
 async def run_agent_chat(
@@ -198,39 +152,21 @@ async def run_agent_chat(
     """
     Run the Sol agent loop and return (response_text, tool_calls_log).
 
-    This is the single implementation shared by the web endpoint and the
-    Telegram webhook — guaranteeing identical behaviour on both channels.
-
-    Args:
-        message:      The new user message.
-        history:      Previous messages [{role, content}, ...] (<=20, oldest-first).
-        current_user: Auth dict from get_current_user / telegram_service.
-        db:           Async SQLAlchemy session.
-
-    Returns:
-        Tuple of (Sol's text reply, list of tool call records for logging).
+    Single implementation shared by the web endpoint and the Telegram webhook.
     """
     settings = get_settings()
-
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
-    # Build alternating message list (Claude requires strictly alternating roles)
     messages: list[dict] = []
     for h in history[-20:]:
         role = h.get("role")
         content = h.get("content")
         if role in ("user", "assistant") and content:
             if messages and messages[-1]["role"] == role:
-                # Merge consecutive same-role messages
                 messages[-1]["content"] += f"\n\n{content}"
             else:
                 messages.append({"role": role, "content": content})
 
-    # Append the new user message — always as a new entry.
-    # NEVER merge into the last history message even if it is also role="user".
-    # History represents PAST turns (read-only context); the current `message`
-    # is always its own turn. Merging corrupts the turn boundary Claude uses to
-    # reason about what was already done (Bug A fix — see design doc).
     messages.append({"role": "user", "content": message})
 
     system = (
@@ -246,38 +182,9 @@ async def run_agent_chat(
         "El historial es solo contexto — no es prueba de ejecución."
     )
 
-    system_blocks = [
-        {
-            "type": "text",
-            "text": system,
-            "cache_control": {"type": "ephemeral"},
-        }
-    ]
+    system_blocks = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
 
     tools = get_tools()
     tools = tools[:-1] + [{**tools[-1], "cache_control": {"type": "ephemeral"}}]
 
-    # ── Plan-and-Execute routing ──────────────────────────────────────────────
-    plan = await build_plan(message, current_user, client)
-    if plan.get("mode") != "reactive":
-        results = await execute_plan(plan, db, current_user)
-        tool_calls_log = [
-            {"tool": r["tool"], "input": r["params"]}
-            for r in results
-            if not r["skipped"]
-        ]
-        text = await _synthesize(message, results, current_user, client)
-
-        # Increment usage counter (same as reactive path)
-        user_result = await db.execute(
-            select(UserModel).where(UserModel.id == current_user["id"])
-        )
-        user_obj = user_result.scalar_one_or_none()
-        if user_obj:
-            user_obj.message_count += 1
-            await db.commit()
-
-        return text, tool_calls_log
-
-    # ── Reactive fallback ─────────────────────────────────────────────────────
     return await _reactive_loop(messages, system_blocks, tools, db, current_user, client)
