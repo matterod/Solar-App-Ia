@@ -109,11 +109,12 @@ export interface Product {
     sale_price?: number; is_active: boolean; created_at: string;
 }
 export const products = {
-    list: (params?: { search?: string; category?: string; low_stock?: boolean }) => {
+    list: (params?: { search?: string; category?: string; low_stock?: boolean; sort?: string }) => {
         const qs = new URLSearchParams();
         if (params?.search) qs.set("search", params.search);
         if (params?.category) qs.set("category", params.category);
         if (params?.low_stock) qs.set("low_stock", "true");
+        if (params?.sort) qs.set("sort", params.sort);
         const q = qs.toString();
         return request<Product[]>(`/products/${q ? `?${q}` : ""}`);
     },

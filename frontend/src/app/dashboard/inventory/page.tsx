@@ -40,6 +40,7 @@ export default function InventoryPage() {
   // URL-driven filter state
   const [search, setSearch] = useURLState<string>("search", "");
   const [showLowStock, setShowLowStock] = useURLState<boolean>("low_stock", false);
+  const [sort, setSort] = useURLState<string>("sort", "name");
 
   // Modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -49,10 +50,11 @@ export default function InventoryPage() {
   const filters = {
     search: search || undefined,
     low_stock: showLowStock || undefined,
+    sort: sort || undefined,
   };
 
   const { data = [], isLoading } = useQuery({
-    queryKey: queryKeys.inventory.list({ search: search || undefined, low_stock: showLowStock || undefined }),
+    queryKey: queryKeys.inventory.list({ search: search || undefined, low_stock: showLowStock || undefined, sort: sort || undefined }),
     queryFn: () => products.list(filters),
     staleTime: 1000 * 60 * 2,
   });
@@ -241,7 +243,7 @@ export default function InventoryPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value as string)}
-          placeholder="Buscar producto..."
+          placeholder="Buscar por nombre o código..."
           className="w-full sm:w-72 px-4 py-2.5 rounded-xl bg-slate-900/60 border border-white/10 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40 transition-all"
         />
         <button
@@ -254,6 +256,25 @@ export default function InventoryPage() {
         >
           Stock Bajo
         </button>
+        <div className="flex gap-2 sm:ml-auto">
+          {[
+            { value: "name", label: "Nombre" },
+            { value: "price_asc", label: "Precio ↑" },
+            { value: "price_desc", label: "Precio ↓" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setSort(opt.value)}
+              className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                sort === opt.value
+                  ? "bg-violet-500/10 border-violet-500/30 text-violet-400"
+                  : "bg-slate-900/60 border-white/10 text-slate-400 hover:bg-slate-800/60"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content */}

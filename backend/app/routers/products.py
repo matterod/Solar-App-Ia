@@ -4,7 +4,7 @@ from typing import List
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, or_, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
@@ -21,17 +21,37 @@ async def list_products(
     category: str = None,
     search: str = None,
     low_stock: bool = False,
+    sort: str = "name",
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """List products with filters."""
-    query = select(Product).where(Product.company_id == current_user["company_id"]).where(Product.is_active == True).offset(skip).limit(limit).order_by(Product.name)
+    sort_map = {
+        "name": asc(Product.name),
+        "price_asc": asc(Product.unit_cost),
+        "price_desc": desc(Product.unit_cost),
+    }
+    order = sort_map.get(sort, asc(Product.name))
+
+    query = (
+        select(Product)
+        .where(Product.company_id == current_user["company_id"])
+        .where(Product.is_active == True)
+        .order_by(order)
+        .offset(skip)
+        .limit(limit)
+    )
     if category:
         query = query.where(Product.category == category)
     if search:
-        query = query.where(Product.name.ilike(f"%{search}%"))
+        query = query.where(
+            or_(
+                Product.name.ilike(f"%{search}%"),
+                Product.sku.ilike(f"%{search}%"),
+            )
+        )
     if low_stock:
         query = query.where(Product.current_stock <= Product.min_stock)
     result = await db.execute(query)
