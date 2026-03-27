@@ -128,12 +128,21 @@ export default function InventoryPage() {
               p.current_stock <= p.min_stock ? "bg-orange-500" : "bg-emerald-500"
             }`}
           />
-          <div>
-            <p className="font-semibold text-slate-100">{p.name}</p>
-            {p.sku && <p className="text-xs text-slate-500 mt-0.5">SKU: {p.sku}</p>}
-          </div>
+          <p className="font-semibold text-slate-100">{p.name}</p>
         </div>
       ),
+    },
+    {
+      key: "sku" as const,
+      header: "Código",
+      render: (p: Product) =>
+        p.sku ? (
+          <span className="font-mono text-xs text-slate-300 bg-slate-800 px-2 py-1 rounded">
+            {p.sku}
+          </span>
+        ) : (
+          <span className="text-slate-500 text-xs">—</span>
+        ),
     },
     {
       key: "category" as const,

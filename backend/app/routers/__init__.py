@@ -20,3 +20,4 @@ from app.routers.budgets import router as budgets_router
 from app.routers.plan import router as plan_router
 from app.routers.telegram import router as telegram_webhook_router
 from app.routers.telegram_api import router as telegram_api_router
+from app.routers.internal import router as internal_router

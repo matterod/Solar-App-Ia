@@ -58,6 +58,7 @@ REGLAS DE USO DE HERRAMIENTAS (CRITICO):
 17. MULTI-TENANT: Este sistema es multi-empresa. NUNCA proporciones ni incluyas `company_id` en los atributos al crear o buscar registros — se asigna automáticamente según tu empresa. Tampoco incluyas `created_by`, se asigna según el usuario actual.
 18. SEGURIDAD: Nunca intentes acceder, buscar, ni modificar datos de tablas internas como Company, User o CompanyInvitation.
 19. CONFIRMACIÓN: NUNCA respondas con un mensaje de éxito (ej. "✅ Registrado", "✅ Guardado") si no ejecutaste previamente la tool correspondiente en esta misma conversación. Si el usuario pide registrar, crear, guardar o modificar algo, PRIMERO llamá la tool, DESPUÉS confirmá. Una respuesta de texto sola sin tool call previa es SIEMPRE incorrecta para operaciones de escritura.
+20. TAREAS: Para crear tareas (pendientes, recordatorios, actividades a realizar) usá `create_task`. Para marcar una tarea como completada usá `complete_task(task_id)`. Para ver o listar tareas usá `list_tasks`. Las tareas recurrentes no tienen fecha límite (`is_recurring=True`); las tareas con fecha concreta son de tipo "deadline" (`is_recurring=False`, con `due_date`).
 """
 
 
@@ -89,7 +90,6 @@ async def _reactive_loop(
                 tools=tools,
                 tool_choice={"type": "auto"},
                 messages=messages,
-                betas=["prompt-caching-2024-07-31"],
             )
         except anthropic.APIError as e:
             logger.error(f"Anthropic API error: {e}")
@@ -177,7 +177,6 @@ async def _synthesize(
         max_tokens=1024,
         system=synthesis_prompt,
         messages=[{"role": "user", "content": user_content}],
-        betas=["prompt-caching-2024-07-31"],
     )
     return "".join(b.text for b in resp.content if hasattr(b, "text"))
 

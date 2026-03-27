@@ -54,7 +54,6 @@ async def build_plan(
                 }
             ],
             messages=[{"role": "user", "content": user_content}],
-            betas=["prompt-caching-2024-07-31"],
         )
     except anthropic.APIError as e:
         logger.warning(f"[planner] API error, falling back to reactive: {e}")
