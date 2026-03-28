@@ -42,7 +42,7 @@ export const queryKeys = {
 
   inventory: {
     all: () => ["inventory"] as const,
-    list: (filters: { search?: string; category?: string; low_stock?: boolean; page?: number }) =>
+    list: (filters: { search?: string; category?: string; low_stock?: boolean; sort?: string; page?: number }) =>
       ["inventory", "list", filters] as const,
     detail: (id: string | number) => ["inventory", "detail", id] as const,
   },
