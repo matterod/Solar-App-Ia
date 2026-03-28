@@ -147,7 +147,7 @@ export default function InventoryPage() {
         ),
     },
     {
-      key@: "category" as const,
+      key: "category" as const,
       header: "Categoría",
       render: (p: Product) =>
         p.category ? (
