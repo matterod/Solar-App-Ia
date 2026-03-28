@@ -105,7 +105,7 @@ export default function Sidebar() {
             </nav>
 
             {/* Logout */}
-            <div className="border-t border-white/10 p-4 shrink-0">
+            <div className="border-t border-white/10 p-4 shrink-0 h-[78px] flex flex-col justify-center">
                 <button
                     onClick={() => {
                         localStorage.removeItem("solar_token");

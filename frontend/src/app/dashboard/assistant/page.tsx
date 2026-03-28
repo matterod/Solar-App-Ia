@@ -204,7 +204,7 @@ export default function AssistantPage() {
         <div className="-mt-14 md:mt-0 flex flex-col h-screen">
             {/* Header */}
             <div className="shrink-0 pl-14 pr-3 md:px-6 py-0 md:py-4 h-14 md:h-auto flex items-center border-b border-white/10 bg-slate-900/90 backdrop-blur-md z-10">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-md shadow-sky-500/20 shrink-0">
                             <span className="text-base sm:text-lg">☀️</span>
@@ -336,9 +336,9 @@ export default function AssistantPage() {
                 </motion.div>
             )}
 
-            <div className="shrink-0 p-2.5 sm:p-4 border-t border-white/10 bg-slate-900/70 backdrop-blur-md">
+            <div className="shrink-0 p-2.5 sm:px-4 border-t border-white/10 bg-slate-900/70 backdrop-blur-md h-[78px] flex flex-col justify-center relative">
                 {usage && usage.plan === 'demo' && (
-                    <div className="text-[10px] text-slate-500 mb-2 pl-2">
+                    <div className="absolute -top-7 left-4 text-[10px] text-slate-500 bg-slate-900/80 px-2 py-0.5 rounded-full border border-white/10">
                         {usage.ai_questions.used} / {usage.ai_questions.limit} consultas usadas
                     </div>
                 )}
