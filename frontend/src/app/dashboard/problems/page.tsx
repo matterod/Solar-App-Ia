@@ -195,15 +195,15 @@ export default function ProblemsPage() {
                         const isResolved = p.status === 'resolved';
                         return (
                             <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                                className={`bg-slate-900 rounded-2xl border transition-all overflow-hidden ${isResolved ? "border-white/10" : "border-red-200 shadow-sm shadow-red-100/50"}`}>
+                                className={`bg-slate-900/80 rounded-2xl border transition-all overflow-hidden ${isResolved ? "border-white/5" : "border-red-500/20 shadow-md shadow-red-500/5"}`}>
 
                                 {/* Problem Header */}
-                                <div className={`p-5 flex flex-col md:flex-row gap-4 justify-between items-start ${!isResolved ? 'bg-red-50/30' : ''}`}>
+                                <div className={`p-5 flex flex-col md:flex-row gap-4 justify-between items-start ${!isResolved ? 'bg-gradient-to-r from-red-500/5 to-transparent' : ''}`}>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <div className={`w-2.5 h-2.5 rounded-full ${isResolved ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`} />
+                                            <div className={`w-2 h-2 shrink-0 rounded-full ${isResolved ? 'bg-emerald-500' : 'bg-red-500 animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`} />
                                             <h3 className="font-bold text-slate-100 text-lg">{p.title}</h3>
-                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isResolved ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                            <span className={`px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider ${isResolved ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                                                 {isResolved ? 'Resuelto' : 'Abierto'}
                                             </span>
                                         </div>

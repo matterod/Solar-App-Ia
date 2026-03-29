@@ -46,7 +46,7 @@ export default function DashboardLayout({
         <div className="flex min-h-screen bg-slate-950 text-slate-50">
             <Toaster theme="dark" richColors />
             <Sidebar />
-            <main className="flex-1 md:ml-64">
+            <main className="flex-1 min-w-0 overflow-x-hidden md:ml-64">
                 <div className="min-h-screen pt-14 md:pt-0">
                     <InvitationBanner />
                     <motion.div

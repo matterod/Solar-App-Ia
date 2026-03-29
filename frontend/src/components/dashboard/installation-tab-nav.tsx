@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 export interface TabNavItem {
   label: string
   href: string
+  exact?: boolean
 }
 
 interface InstallationTabNavProps {
@@ -19,7 +20,9 @@ export function InstallationTabNav({ tabs }: InstallationTabNavProps) {
   return (
     <nav className="flex gap-1 border-b border-white/5">
       {tabs.map((tab) => {
-        const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
+        const isActive = tab.exact 
+          ? pathname === tab.href
+          : pathname === tab.href || pathname.startsWith(tab.href + '/')
         return (
           <Link
             key={tab.href}

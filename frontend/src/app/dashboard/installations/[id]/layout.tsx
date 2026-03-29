@@ -26,7 +26,7 @@ export default function InstallationDetailLayout({ children, params }: LayoutPro
   })
 
   const tabs = [
-    { label: 'General', href: `/dashboard/installations/${id}` },
+    { label: 'General', href: `/dashboard/installations/${id}`, exact: true },
     { label: 'Costos', href: `/dashboard/installations/${id}/costs` },
     { label: 'Actividades', href: `/dashboard/installations/${id}/activities` },
     { label: 'Mantenimiento', href: `/dashboard/installations/${id}/maintenance` },
