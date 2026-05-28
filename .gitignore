@@ -39,3 +39,4 @@ build/
 
 # AI / Agents
 openspec/
+backend/serviceAccountKey.json
