@@ -47,7 +47,7 @@ async def create_activity(
     current_user: User = Depends(get_current_user),
 ):
     """Create an activity log entry."""
-    activity = Activity(**data.model_dump(), user_id=current_user.id)
+    activity = Activity(**data.model_dump(), user_id=current_user["id"])
     db.add(activity)
     await db.flush()
     await db.refresh(activity)

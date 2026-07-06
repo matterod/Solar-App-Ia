@@ -52,7 +52,7 @@ async def create_task(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new pending task."""
-    task = PendingTask(**data.model_dump(), created_by=current_user.id)
+    task = PendingTask(**data.model_dump(), created_by=current_user["id"])
     db.add(task)
     await db.flush()
     await db.refresh(task)

@@ -52,7 +52,7 @@ async def create_movement(
     else:
         raise HTTPException(status_code=400, detail="Invalid movement type")
 
-    movement = StockMovement(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user.id)
+    movement = StockMovement(company_id=current_user["company_id"], **data.model_dump(), created_by=current_user["id"])
     db.add(movement)
     await db.flush()
     await db.refresh(movement)
