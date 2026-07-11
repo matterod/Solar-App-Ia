@@ -226,6 +226,8 @@ Cloud Scheduler (11:00 UTC diario / lunes)
 | 2026-03-26 | Docker | Anonymous volumes requieren `--no-cache` en el build al agregar paquetes nuevos |
 | 2026-03-26 | CSS | `background-image` tiene mayor especificidad que `background-color` — si hay un `.gradient-mesh` en el className hay que removerlo, no solo sobreescribir el color |
 | 2026-03-26 | `useURLState` | Siempre anotar el tipo explícito: `useURLState<string>('search', '')` para evitar inferencia incorrecta |
+| 2026-07-08 | Frontend/Backend | `camelCase` vs `snake_case`: Al migrar a Node, Sequelize expone atributos en `camelCase`. Se debe usar un script para refactorizar interfaces de la UI y agregar alias retrocompatibles en Express middlewares. |
+| 2026-07-09 | Node.js + Sequelize | Con Node 20 y `ES2022`, TS usa `useDefineForClassFields: true`. Esto pisa los getters de Sequelize con `undefined`. Solución: poner `"useDefineForClassFields": false` en `tsconfig.json`. |
 
 ---
 

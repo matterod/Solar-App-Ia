@@ -1,106 +1,47 @@
-# ☀️ Solar ERP — Solar Energy Management Platform
+# Sol (Solar ERP)
 
-> An ERP-like platform with AI Agent assistant for solar energy companies.
+Sol es un ERP completo diseñado específicamente para empresas instaladoras de paneles solares. Permite gestionar clientes, presupuestos, instalaciones, mantenimientos, inventario y más, todo unificado bajo una misma plataforma.
 
-## Architecture
+## Arquitectura Modular (Microservicios)
 
-```
-Frontend (Next.js :3000)
-        │
-        ▼
-Backend API (FastAPI :8000)
-        │
-        ▼
-Database (PostgreSQL :5432)
+El proyecto está diseñado con una arquitectura modular utilizando múltiples backends para separar responsabilidades de manera limpia y escalable. 
 
-Additional Services:
-  • AI Agent (Sol)
-  • Photo Storage (S3-compatible)
-  • WhatsApp Integration
-  • Scheduler (maintenance reminders)
-```
+Actualmente, el sistema se divide en los siguientes componentes principales:
 
-## Quick Start
+### 1. Frontend (`/frontend`)
+- **Framework:** Next.js 14+ (App Router)
+- **Lenguaje:** TypeScript
+- **Estilos:** Tailwind CSS
+- **Responsabilidad:** Proveer la interfaz de usuario para que los instaladores y administradores interactúen con el sistema.
 
-### Prerequisites
+### 2. Core API Backend (`/backend-node`)
+- **Framework:** Node.js con Express
+- **Lenguaje:** TypeScript
+- **ORM:** Sequelize
+- **Responsabilidad:** Es el cerebro operativo principal. Maneja las operaciones CRUD de base de datos (clientes, inventario, instalaciones, etc.), la autenticación (vía Firebase Auth) y las validaciones de negocio.
 
-- Docker & Docker Compose
-- Node.js 20+ (for local frontend dev)
-- Python 3.11+ (for local backend dev)
+### 3. AI & Data Backend (`/backend` - *En migración/desacople*)
+- **Framework:** FastAPI (Python)
+- **Responsabilidad:** Anteriormente manejaba todo el backend. Actualmente, su rol se está redirigiendo para especializarse exclusivamente en **tareas pesadas, integraciones externas y Machine Learning**:
+  - **Agente IA (Claude):** Interacción por chat para asistir a los usuarios.
+  - **Generación de PDFs:** Armado de documentos de presupuestos complejos.
+  - **Webhooks de Telegram:** Integración con el bot de notificaciones para los instaladores.
 
-### Run with Docker Compose
+### 4. Base de Datos
+- **Motor:** PostgreSQL 16
+- **Responsabilidad:** Almacenamiento relacional de todas las entidades del negocio.
+
+## ¿Por qué dos backends?
+
+Tener el **Core API en Node.js** (tipado con TypeScript) y el **AI/Workers en Python** es un patrón arquitectónico de microservicios muy común y robusto. Nos permite:
+- **Compartir código y tipado:** Frontend y Backend (Node) hablan en TypeScript (compartiendo interfaces y convenciones como `camelCase`).
+- **Especialización:** Python es indiscutiblemente el mejor ecosistema para procesamiento de IA (Agentes, LLMs) y generación de PDFs o tareas asíncronas pesadas. Node.js es superior manejando miles de requests simultáneos de una API transaccional.
+
+## Ejecución Local (Docker)
+
+El proyecto está completamente contenerizado para un despliegue y desarrollo sin fricciones.
 
 ```bash
-# From project root
-docker compose up --build
+# Levantar toda la infraestructura (Base de datos, Backend Node, Frontend Next.js)
+docker compose up -d --build
 ```
-
-### Access
-
-| Service     | URL                        |
-| ----------- | -------------------------- |
-| Frontend    | http://localhost:3000      |
-| Backend API | http://localhost:8000      |
-| API Docs    | http://localhost:8000/docs |
-| Database    | localhost:5432             |
-
-## Project Structure
-
-```
-solar-erp/
-├── frontend/          # Next.js + React + TypeScript + TailwindCSS
-├── backend/           # FastAPI + SQLAlchemy + Pydantic
-├── agent/             # AI Agent "Sol" — tool-based LLM assistant
-├── database/          # SQL migrations and seed data
-├── docker/            # Dockerfiles for each service
-├── .agent/skills/     # Antigravity development skills
-├── docker-compose.yml
-└── README.md
-```
-
-## Technology Stack
-
-| Layer     | Technology                                             |
-| --------- | ------------------------------------------------------ |
-| Frontend  | Next.js, React, TypeScript, TailwindCSS, Framer Motion |
-| Backend   | FastAPI, Python, SQLAlchemy, Pydantic                  |
-| Database  | PostgreSQL                                             |
-| AI Agent  | LLM Agent with tool-based API integration              |
-| Storage   | S3-compatible (Cloudflare R2)                          |
-| Messaging | WhatsApp API integration                               |
-| Infra     | Docker, Docker Compose                                 |
-
-## User Roles
-
-| Role       | Access                                 |
-| ---------- | -------------------------------------- |
-| Admin      | Full access                            |
-| Partner    | Full access (Company level)            |
-| Installer  | Installations, activities, maintenance |
-| Accountant | Financials, budgets, payments          |
-
-## AI Agent — Sol
-
-Sol is an AI assistant that interacts with the platform via backend API tools:
-
-- `search_installation` — Find installations by client or location
-- `create_activity` — Log activities for installations
-- `register_maintenance` — Schedule maintenance tasks
-- `create_pending_task` — Add pending tasks
-- `query_stock` — Check inventory levels
-- `create_installation` — Register new installations
-
-Sol **never** accesses the database directly. All interactions go through the FastAPI backend.
-
-## Development Principles
-
-- Modular architecture
-- Clean code with strict typing
-- Scalable services
-- Consistent API structure
-- Full documentation
-
-## License
-
-Proprietary — Internal use only.
-# Solar-App-Ia
