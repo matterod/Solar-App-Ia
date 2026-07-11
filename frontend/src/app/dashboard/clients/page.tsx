@@ -158,7 +158,7 @@ export default function ClientsPage() {
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-[10px] text-slate-500">
-                  Creado: {new Date(client.created_at).toLocaleDateString('es-AR')}
+                  Creado: {new Date(client.createdAt).toLocaleDateString('es-AR')}
                 </p>
                 <Link
                   href={`/dashboard/clients/${client.id}`}

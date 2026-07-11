@@ -109,10 +109,10 @@ export default function SettingsPage() {
                         <h2 className="text-base font-semibold text-slate-100 mb-4">Perfil</h2>
                         <div className="flex items-center gap-4 mb-6">
                             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-white text-lg font-bold shadow-md shadow-sky-500/20">
-                                {user.full_name.slice(0, 2).toUpperCase()}
+                                {user.fullName.slice(0, 2).toUpperCase()}
                             </div>
                             <div>
-                                <p className="font-semibold text-slate-100">{user.full_name}</p>
+                                <p className="font-semibold text-slate-100">{user.fullName}</p>
                                 <p className="text-sm text-slate-500">{user.email}</p>
                             </div>
                         </div>
@@ -121,10 +121,10 @@ export default function SettingsPage() {
                                 <span className="text-sm text-slate-500">Rol</span>
                                 <span className="text-sm font-medium text-slate-100 capitalize">{user.role}</span>
                             </div>
-                            {user.company_name && (
+                            {user.companyName && (
                                 <div className="flex items-center justify-between py-2 border-t border-white/10">
                                     <span className="text-sm text-slate-500">Empresa</span>
-                                    <span className="text-sm font-medium text-slate-100 capitalize">{user.company_name}</span>
+                                    <span className="text-sm font-medium text-slate-100 capitalize">{user.companyName}</span>
                                 </div>
                             )}
                             <div className="flex items-center justify-between py-2 border-t border-white/10">
@@ -145,10 +145,10 @@ export default function SettingsPage() {
 
                             <div className="space-y-4">
                                 {[
-                                    { label: "Consultas de IA", data: usage.ai_questions },
+                                    { label: "Consultas de IA", data: usage.aiQuestions },
                                     { label: "Clientes", data: usage.clients },
                                     { label: "Instalaciones", data: usage.installations },
-                                    { label: "Miembros del Equipo", data: usage.team_members },
+                                    { label: "Miembros del Equipo", data: usage.teamMembers },
                                 ].map((item, i) => (
                                     <div key={i}>
                                         <div className="flex justify-between text-sm mb-1.5">
@@ -253,12 +253,12 @@ export default function SettingsPage() {
                             {teamMembers.map((member) => (
                                 <div key={member.id} className="border border-white/10 rounded-xl p-4">
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="font-medium text-slate-100 text-sm">{member.full_name}</p>
-                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider ${member.is_active
+                                        <p className="font-medium text-slate-100 text-sm">{member.fullName}</p>
+                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider ${member.isActive
                                             ? "bg-emerald-100 text-emerald-700"
                                             : "bg-red-100 text-red-700"
                                         }`}>
-                                            {member.is_active ? "Activo" : "Inactivo"}
+                                            {member.isActive ? "Activo" : "Inactivo"}
                                         </span>
                                     </div>
                                     <p className="text-xs text-slate-500 mb-1">{member.email}</p>
@@ -286,7 +286,7 @@ export default function SettingsPage() {
                                 <tbody className="divide-y divide-white/10">
                                     {teamMembers.map((member) => (
                                         <tr key={member.id} className="hover:bg-slate-800/50 transition-colors pointer-events-none">
-                                            <td className="py-4 font-medium text-slate-100">{member.full_name}</td>
+                                            <td className="py-4 font-medium text-slate-100">{member.fullName}</td>
                                             <td className="py-4 text-slate-400">{member.email}</td>
                                             <td className="py-4">
                                                 <span className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
@@ -297,11 +297,11 @@ export default function SettingsPage() {
                                                 </span>
                                             </td>
                                             <td className="py-4">
-                                                <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider ${member.is_active
+                                                <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider ${member.isActive
                                                         ? "bg-emerald-100 text-emerald-700"
                                                         : "bg-red-100 text-red-700"
                                                     }`}>
-                                                    {member.is_active ? "Activo" : "Inactivo"}
+                                                    {member.isActive ? "Activo" : "Inactivo"}
                                                 </span>
                                             </td>
                                         </tr>
@@ -341,7 +341,7 @@ export default function SettingsPage() {
                                 <div className="flex items-center justify-between py-2 border-t border-white/10">
                                     <span className="text-sm text-slate-500">Usuario</span>
                                     <span className="text-sm font-medium text-slate-100">
-                                        {tgStatus.telegram_username ? `@${tgStatus.telegram_username}` : "Vinculado"}
+                                        {tgStatus.telegramUsername ? `@${tgStatus.telegramUsername}` : "Vinculado"}
                                     </span>
                                 </div>
                                 <button
@@ -381,8 +381,8 @@ export default function SettingsPage() {
                                             <ol className="text-sm text-sky-800 space-y-1 list-decimal list-inside">
                                                 <li>
                                                     Abrí Telegram y buscá{" "}
-                                                    {tgCode.bot_username
-                                                        ? <a href={`https://t.me/${tgCode.bot_username}`} target="_blank" rel="noreferrer" className="font-bold underline">@{tgCode.bot_username}</a>
+                                                    {tgCode.botUsername
+                                                        ? <a href={`https://t.me/${tgCode.botUsername}`} target="_blank" rel="noreferrer" className="font-bold underline">@{tgCode.botUsername}</a>
                                                         : <span className="font-bold">el bot de Solar ERP</span>
                                                     }
                                                 </li>

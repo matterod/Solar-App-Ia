@@ -33,8 +33,8 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
 
   // Separate query for maintenance records
   const { data: records = [], isLoading } = useQuery({
-    queryKey: queryKeys.maintenance.list({ installation_id: id }),
-    queryFn: () => maintenance.list({ installation_id: id }),
+    queryKey: queryKeys.maintenance.list({ installationId: id }),
+    queryFn: () => maintenance.list({ installationId: id }),
     enabled: !!id,
   })
 
@@ -42,8 +42,8 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    maintenance_type: 'preventive',
-    scheduled_date: new Date().toISOString().split('T')[0],
+    maintenanceType: 'preventive',
+    scheduledDate: new Date().toISOString().split('T')[0],
     description: '',
     status: 'pending',
   })
@@ -54,21 +54,21 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
     setSaving(true)
     try {
       await maintenance.create({
-        installation_id: installation.id,
-        maintenance_type: form.maintenance_type,
-        scheduled_date: form.scheduled_date,
+        installationId: installation.id,
+        maintenanceType: form.maintenanceType,
+        scheduledDate: form.scheduledDate,
         description: form.description || undefined,
         status: form.status,
-        notification_sent: false,
+        notificationSent: false,
       })
       setForm({
-        maintenance_type: 'preventive',
-        scheduled_date: new Date().toISOString().split('T')[0],
+        maintenanceType: 'preventive',
+        scheduledDate: new Date().toISOString().split('T')[0],
         description: '',
         status: 'pending',
       })
       setShowForm(false)
-      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.list({ installation_id: id }) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.list({ installationId: id }) })
     } catch (err) {
       handleApiError(err)
     } finally {
@@ -100,8 +100,8 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
                 <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Tipo *</label>
                 <select
                   required
-                  value={form.maintenance_type}
-                  onChange={(e) => setForm({ ...form, maintenance_type: e.target.value })}
+                  value={form.maintenanceType}
+                  onChange={(e) => setForm({ ...form, maintenanceType: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 >
                   <option value="preventive">Preventivo</option>
@@ -116,8 +116,8 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
                 <input
                   type="date"
                   required
-                  value={form.scheduled_date}
-                  onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })}
+                  value={form.scheduledDate}
+                  onChange={(e) => setForm({ ...form, scheduledDate: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 />
               </div>
@@ -189,7 +189,7 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-bold text-slate-100">
-                    {maintenanceTypeLabels[record.maintenance_type] ?? record.maintenance_type}
+                    {maintenanceTypeLabels[record.maintenanceType] ?? record.maintenanceType}
                   </p>
                   <Badge status={record.status as any}>
                     {record.status === 'completed' ? 'Completado'
@@ -198,10 +198,10 @@ export default function InstallationMaintenancePage({ params }: PageProps) {
                   </Badge>
                 </div>
                 <p className="text-xs text-slate-500 mb-2">
-                  Programado: {new Date(record.scheduled_date).toLocaleDateString('es-AR')}
-                  {record.completed_date && (
+                  Programado: {new Date(record.scheduledDate).toLocaleDateString('es-AR')}
+                  {record.completedDate && (
                     <span className="ml-2">
-                      · Completado: {new Date(record.completed_date).toLocaleDateString('es-AR')}
+                      · Completado: {new Date(record.completedDate).toLocaleDateString('es-AR')}
                     </span>
                   )}
                 </p>

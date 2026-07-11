@@ -14,10 +14,10 @@ export class ProductController {
       const limit = parseInt(req.query.limit as string) || 100;
       const sort = (req.query.sort as string) || 'name';
       
-      const filters = {
+      const filters: any = {
         category: req.query.category,
         search: req.query.search,
-        low_stock: req.query.low_stock === 'true',
+        lowStock: req.query.lowStock === 'true',
       };
       
       const companyId = req.current_user.company_id;

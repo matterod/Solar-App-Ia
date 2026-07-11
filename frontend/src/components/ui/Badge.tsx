@@ -12,7 +12,7 @@ export type BadgeStatus =
   | "active"
   | "approved"
   | "rejected"
-  | "low_stock"
+  | "lowStock"
   | "success"
   | "warning"
   | "danger"
@@ -35,7 +35,7 @@ const statusClasses: Record<BadgeStatus, string> = {
   active: "bg-emerald-500/10 text-emerald-400",
   approved: "bg-emerald-500/10 text-emerald-400",
   rejected: "bg-red-500/10 text-red-400",
-  low_stock: "bg-red-500/10 text-red-400",
+  lowStock: "bg-red-500/10 text-red-400",
   success: "bg-emerald-500/10 text-emerald-400",
   warning: "bg-amber-500/10 text-amber-400",
   danger: "bg-red-500/10 text-red-400",

@@ -19,7 +19,7 @@ export default function MaintenancePage() {
     const queryClient = useQueryClient();
     const [filterStatus, setFilterStatus] = useState("");
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState({ installation_id: "", scheduled_date: "", maintenance_type: "routine", description: "" });
+    const [form, setForm] = useState({ installationId: "", scheduledDate: "", maintenanceType: "routine", description: "" });
 
     const { data = [], isLoading: loading } = useQuery({
         queryKey: queryKeys.maintenance.list({ status: filterStatus || undefined }),
@@ -37,13 +37,13 @@ export default function MaintenancePage() {
             toast.success("Mantenimiento programado correctamente");
             queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.all() });
             setShowModal(false);
-            setForm({ installation_id: "", scheduled_date: "", maintenance_type: "routine", description: "" });
+            setForm({ installationId: "", scheduledDate: "", maintenanceType: "routine", description: "" });
         },
         onError: (e) => handleApiError(e),
     });
 
     const completeMutation = useMutation({
-        mutationFn: (id: string) => maintenance.update(id, { status: "completed", completed_date: new Date().toISOString().split("T")[0] } as Partial<Maintenance>),
+        mutationFn: (id: string) => maintenance.update(id, { status: "completed", completedDate: new Date().toISOString().split("T")[0] } as Partial<Maintenance>),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.maintenance.all() });
         },
@@ -96,8 +96,8 @@ export default function MaintenancePage() {
                 <div className="space-y-3">
                     {data.map((m, i) => {
                         const s = statusLabels[m.status] || { label: m.status, color: "bg-slate-800 text-slate-400" };
-                        const instName = instList.find(inst => inst.id === m.installation_id)?.location_name || "Instalación";
-                        const isOverdue = m.status === "scheduled" && new Date(m.scheduled_date) < new Date();
+                        const instName = instList.find(inst => inst.id === m.installationId)?.locationName || "Instalación";
+                        const isOverdue = m.status === "scheduled" && new Date(m.scheduledDate) < new Date();
                         return (
                             <motion.div key={m.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                                 className={`bg-slate-900 rounded-2xl p-5 border hover:shadow-md transition-all ${isOverdue ? "border-red-200" : "border-white/10"}`}>
@@ -109,7 +109,7 @@ export default function MaintenancePage() {
                                             {isOverdue && <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">Vencido</span>}
                                         </div>
                                         <p className="text-sm text-slate-500">
-                                            📅 {new Date(m.scheduled_date).toLocaleDateString("es-AR")} · {m.maintenance_type === "routine" ? "Rutina" : m.maintenance_type === "corrective" ? "Correctivo" : m.maintenance_type}
+                                            📅 {new Date(m.scheduledDate).toLocaleDateString("es-AR")} · {m.maintenanceType === "routine" ? "Rutina" : m.maintenanceType === "corrective" ? "Correctivo" : m.maintenanceType}
                                         </p>
                                         {m.description && <p className="text-sm text-slate-500 mt-1">{m.description}</p>}
                                     </div>
@@ -137,19 +137,19 @@ export default function MaintenancePage() {
                                 <form onSubmit={handleCreate} className="p-6 space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">Instalación *</label>
-                                        <select required value={form.installation_id} onChange={(e) => setForm({ ...form, installation_id: e.target.value })}
+                                        <select required value={form.installationId} onChange={(e) => setForm({ ...form, installationId: e.target.value })}
                                             className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400">
                                             <option value="">Seleccionar instalación</option>
-                                            {instList.map(inst => <option key={inst.id} value={inst.id}>{inst.location_name}</option>)}
+                                            {instList.map(inst => <option key={inst.id} value={inst.id}>{inst.locationName}</option>)}
                                         </select>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">Fecha *</label>
-                                        <input type="date" required value={form.scheduled_date} onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400" />
+                                        <input type="date" required value={form.scheduledDate} onChange={(e) => setForm({ ...form, scheduledDate: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">Tipo</label>
-                                        <select value={form.maintenance_type} onChange={(e) => setForm({ ...form, maintenance_type: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400">
+                                        <select value={form.maintenanceType} onChange={(e) => setForm({ ...form, maintenanceType: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400">
                                             <option value="routine">Rutina</option>
                                             <option value="corrective">Correctivo</option>
                                             <option value="preventive">Preventivo</option>

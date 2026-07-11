@@ -10,17 +10,17 @@ export default function SuperAdminPage() {
     const { dbUser } = useAuth();
     const router = useRouter();
     
-    const [stats, setStats] = useState<{ total_companies: number; total_users: number; demo_count: number; pro_count: number } | null>(null);
+    const [stats, setStats] = useState<{ totalCompanies: number; totalUsers: number; demoCount: number; proCount: number } | null>(null);
     const [companies, setCompanies] = useState<CompanyAdmin[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (dbUser && !dbUser.is_superadmin) {
+        if (dbUser && !dbUser.isSuperadmin) {
             router.push("/dashboard");
             return;
         }
 
-        if (dbUser?.is_superadmin) {
+        if (dbUser?.isSuperadmin) {
             fetchData();
         }
     }, [dbUser, router]);
@@ -61,10 +61,10 @@ export default function SuperAdminPage() {
             {stats && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                     {[
-                        { label: "Empresas Totales", value: stats.total_companies, color: "text-sky-600" },
-                        { label: "Usuarios Totales", value: stats.total_users, color: "text-emerald-600" },
-                        { label: "Planes Demo", value: stats.demo_count, color: "text-indigo-600" },
-                        { label: "Planes Pro", value: stats.pro_count, color: "text-purple-600" },
+                        { label: "Empresas Totales", value: stats.totalCompanies, color: "text-sky-600" },
+                        { label: "Usuarios Totales", value: stats.totalUsers, color: "text-emerald-600" },
+                        { label: "Planes Demo", value: stats.demoCount, color: "text-indigo-600" },
+                        { label: "Planes Pro", value: stats.proCount, color: "text-purple-600" },
                     ].map((s, i) => (
                         <div key={i} className="bg-slate-900 rounded-2xl p-5 border border-white/10 shadow-sm">
                             <p className="text-sm text-slate-500 font-medium mb-1">{s.label}</p>
@@ -90,11 +90,11 @@ export default function SuperAdminPage() {
                                 </span>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
-                                <span>👥 {company.user_count} usuarios</span>
+                                <span>👥 {company.userCount} usuarios</span>
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                                    company.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                    company.subscriptionStatus === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                                 }`}>
-                                    {company.subscription_status}
+                                    {company.subscriptionStatus}
                                 </span>
                             </div>
                             <button
@@ -123,12 +123,12 @@ export default function SuperAdminPage() {
                             {companies.map((company) => (
                                 <tr key={company.id} className="hover:bg-slate-800/50 transition-colors h-16">
                                     <td className="py-4 font-medium text-slate-100">{company.name}</td>
-                                    <td className="py-4 text-slate-400">{company.user_count}</td>
+                                    <td className="py-4 text-slate-400">{company.userCount}</td>
                                     <td className="py-4">
                                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider ${
-                                            company.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                                            company.subscriptionStatus === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                                         }`}>
-                                            {company.subscription_status}
+                                            {company.subscriptionStatus}
                                         </span>
                                     </td>
                                     <td className="py-4 w-[100px]">

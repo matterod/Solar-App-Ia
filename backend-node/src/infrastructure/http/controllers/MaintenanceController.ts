@@ -17,9 +17,9 @@ export class MaintenanceController {
       const companyId = req.current_user.company_id;
 
       const filters = {
-        installationId: req.query.installation_id as string,
+        installationId: req.query.installationId as string,
         status: req.query.status as string,
-        upcomingDays: req.query.upcoming_days as string,
+        upcomingDays: req.query.upcomingDays as string,
       };
 
       const maintenances = await this.listMaintenancesUseCase.execute(companyId, filters, skip, limit);

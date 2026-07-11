@@ -363,7 +363,7 @@ export default function PresupuestosPage() {
                       {formatCurrency(b.total)}
                     </span>
                     <span className="text-xs text-slate-400">
-                      {formatDate(b.created_at)}
+                      {formatDate(b.createdAt)}
                     </span>
                   </div>
                 </motion.div>
@@ -423,7 +423,7 @@ export default function PresupuestosPage() {
                         {formatCurrency(b.total)}
                       </td>
                       <td className="py-4 px-6 text-xs text-slate-400">
-                        {formatDate(b.created_at)}
+                        {formatDate(b.createdAt)}
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center justify-end gap-1">
@@ -791,11 +791,11 @@ export default function PresupuestosPage() {
                     );
                   })()}
                   <span className="text-xs text-slate-400">
-                    Creado: {formatDate(detailBudget.created_at)}
+                    Creado: {formatDate(detailBudget.createdAt)}
                   </span>
-                  {detailBudget.valid_until && (
+                  {detailBudget.validUntil && (
                     <span className="text-xs text-slate-400">
-                      Válido hasta: {formatDate(detailBudget.valid_until)}
+                      Válido hasta: {formatDate(detailBudget.validUntil)}
                     </span>
                   )}
                 </div>
@@ -840,7 +840,7 @@ export default function PresupuestosPage() {
                       </thead>
                       <tbody className="divide-y divide-white/10">
                         {detailBudget.items
-                          .sort((a, b) => a.sort_order - b.sort_order)
+                          .sort((a, b) => a.sortOrder - b.sortOrder)
                           .map((item, idx) => (
                             <tr
                               key={item.id}
@@ -856,7 +856,7 @@ export default function PresupuestosPage() {
                                 {item.quantity}
                               </td>
                               <td className="py-3 px-4 text-right text-slate-400">
-                                {formatCurrency(item.unit_price)}
+                                {formatCurrency(item.unitPrice)}
                               </td>
                               <td className="py-3 px-4 text-right font-semibold text-slate-100">
                                 {formatCurrency(item.total)}
@@ -879,7 +879,7 @@ export default function PresupuestosPage() {
                     </div>
                     <div className="flex justify-between px-4 py-2.5 text-sm border-t border-white/10">
                       <span className="text-slate-500">
-                        IVA ({detailBudget.tax_rate}%)
+                        IVA ({detailBudget.taxRate}%)
                       </span>
                       <span className="font-semibold text-slate-700">
                         {formatCurrency(detailBudget.tax_amount)}

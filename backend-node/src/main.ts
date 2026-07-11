@@ -14,12 +14,13 @@ import problemRoutes from './infrastructure/http/routes/problem.routes';
 import taskRoutes from './infrastructure/http/routes/task.routes';
 import supplierRoutes from './infrastructure/http/routes/supplier.routes';
 import { sequelize } from './infrastructure/database/database.config';
+import './infrastructure/database/models'; // Register model associations
 import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 export const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json());
@@ -38,7 +39,12 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy' });
 });
 
+import authRoutes from './infrastructure/http/routes/auth.routes';
+import planRoutes from './infrastructure/http/routes/plan.routes';
+import teamRoutes from './infrastructure/http/routes/team.routes';
+
 // API Routes
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/stock', stockRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/clients', clientRoutes);
@@ -51,6 +57,13 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/problems', problemRoutes);
 app.use('/api/v1/pending-tasks', taskRoutes);
 app.use('/api/v1/suppliers', supplierRoutes);
+app.use('/api/v1/plan', planRoutes);
+app.use('/api/v1/team', teamRoutes);
+
+// Fallback 404 JSON handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ detail: `Not Found: ${req.method} ${req.originalUrl}` });
+});
 
 async function bootstrap() {
   try {

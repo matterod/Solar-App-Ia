@@ -27,8 +27,8 @@ export default function ClientDetailPage({ params }: PageProps) {
   })
 
   const { data: clientInstallations = [], isLoading: installationsLoading } = useQuery({
-    queryKey: queryKeys.installations.list({ client_id: id }),
-    queryFn: () => installations.list({ client_id: id }),
+    queryKey: queryKeys.installations.list({ clientId: id }),
+    queryFn: () => installations.list({ clientId: id }),
     enabled: !!id,
   })
 
@@ -97,16 +97,16 @@ export default function ClientDetailPage({ params }: PageProps) {
                 {[client.address, client.city, client.province].filter(Boolean).join(', ') || 'No registrado'}
               </p>
             </div>
-            {client.tax_id && (
+            {client.taxId && (
               <div>
                 <p className="text-xs text-slate-500 mb-0.5">CUIT / Tax ID</p>
-                <p className="text-sm text-slate-200">{client.tax_id}</p>
+                <p className="text-sm text-slate-200">{client.taxId}</p>
               </div>
             )}
             <div>
               <p className="text-xs text-slate-500 mb-0.5">Fecha de registro</p>
               <p className="text-sm text-slate-200">
-                {new Date(client.created_at).toLocaleDateString('es-AR')}
+                {new Date(client.createdAt).toLocaleDateString('es-AR')}
               </p>
             </div>
             {client.notes && (
@@ -132,10 +132,10 @@ export default function ClientDetailPage({ params }: PageProps) {
           <DataTable
             columns={[
               {
-                key: 'location_name',
+                key: 'locationName',
                 header: 'Ubicación',
                 render: (inst) => (
-                  <span className="font-medium text-slate-100">{inst.location_name}</span>
+                  <span className="font-medium text-slate-100">{inst.locationName}</span>
                 ),
               },
               {
@@ -151,18 +151,18 @@ export default function ClientDetailPage({ params }: PageProps) {
                 },
               },
               {
-                key: 'panel_count',
+                key: 'panelCount',
                 header: 'Paneles',
                 render: (inst) => (
-                  <span className="text-slate-300">{inst.panel_count} pan.</span>
+                  <span className="text-slate-300">{inst.panelCount} pan.</span>
                 ),
               },
               {
-                key: 'system_power_kw',
+                key: 'systemPowerKw',
                 header: 'Potencia',
                 render: (inst) => (
                   <span className="text-slate-300">
-                    {inst.system_power_kw ? `${inst.system_power_kw} kW` : '—'}
+                    {inst.systemPowerKw ? `${inst.systemPowerKw} kW` : '—'}
                   </span>
                 ),
               },

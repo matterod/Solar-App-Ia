@@ -25,8 +25,8 @@ export class PendingTaskController {
       const filters = {
         status: req.query.status as string,
         priority: req.query.priority as string,
-        installationId: req.query.installation_id as string,
-        assignedTo: req.query.assigned_to as string,
+        installationId: req.query.installationId as string,
+        assignedTo: req.query.assignedTo as string,
       };
 
       const tasks = await this.listPendingTasksUseCase.execute(companyId, filters, skip, limit);

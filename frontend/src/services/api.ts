@@ -40,16 +40,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 /* ── Auth ── */
 export const auth = {
-    getMe: () => request<{ id: string; email: string; full_name: string; role: string; company_id: string; company_name?: string | null; plan?: string | null; }>("/auth/me"),
+    getMe: () => request<{ id: string; email: string; fullName: string; role: string; companyId: string; companyName?: string | null; plan?: string | null; }>("/auth/me"),
 };
 
 /* ── Invitations ── */
 export interface Invitation {
-    id: string; company_id: string; email: string; role: string;
-    status: string; created_at: string;
+    id: string; companyId: string; email: string; role: string;
+    status: string; createdAt: string;
 }
 export interface ReceivedInvitation extends Invitation {
-    company_name: string;
+    companyName: string;
 }
 export const invitations = {
     list: () => request<Invitation[]>("/invitations/"),
@@ -63,8 +63,8 @@ export const invitations = {
 /* ── Clients ── */
 export interface Client {
     id: string; name: string; email?: string; phone?: string; company?: string;
-    tax_id?: string; address?: string; city?: string; province?: string; notes?: string;
-    created_at: string;
+    taxId?: string; address?: string; city?: string; province?: string; notes?: string;
+    createdAt: string;
 }
 export const clients = {
     list: (search?: string) => request<Client[]>(`/clients/${search ? `?search=${encodeURIComponent(search)}` : ""}`),
@@ -76,23 +76,23 @@ export const clients = {
 
 /* ── Installations ── */
 export interface Installation {
-    id: string; client_id: string; location_name: string; address: string;
+    id: string; clientId: string; locationName: string; address: string;
     city?: string; province?: string; latitude?: number; longitude?: number;
-    panel_count: number; panel_model?: string; inverter_model?: string; inverter_count: number;
-    system_power_kw?: number; installation_date?: string; status: string;
-    description?: string; created_at: string;
+    panelCount: number; panelModel?: string; inverterModel?: string; inverterCount: number;
+    systemPowerKw?: number; installationDate?: string; status: string;
+    description?: string; createdAt: string;
 }
 export interface InstallationDetail extends Installation {
     activities: Activity[];
-    maintenance_records: Maintenance[];
+    maintenanceRecords: Maintenance[];
     costs: Cost[];
 }
 export const installations = {
-    list: (params?: { search?: string; status?: string; client_id?: string }) => {
+    list: (params?: { search?: string; status?: string; clientId?: string }) => {
         const qs = new URLSearchParams();
         if (params?.search) qs.set("search", params.search);
         if (params?.status) qs.set("status", params.status);
-        if (params?.client_id) qs.set("client_id", params.client_id);
+        if (params?.clientId) qs.set("clientId", params.clientId);
         const q = qs.toString();
         return request<Installation[]>(`/installations/${q ? `?${q}` : ""}`);
     },
@@ -105,15 +105,15 @@ export const installations = {
 /* ── Products ── */
 export interface Product {
     id: string; name: string; sku?: string; description?: string; category?: string;
-    unit: string; current_stock: number; min_stock: number; unit_cost?: number;
-    sale_price?: number; is_active: boolean; created_at: string;
+    unit: string; currentStock: number; minStock: number; unitCost?: number;
+    salePrice?: number; isActive: boolean; createdAt: string;
 }
 export const products = {
-    list: (params?: { search?: string; category?: string; low_stock?: boolean; sort?: string }) => {
+    list: (params?: { search?: string; category?: string; lowStock?: boolean; sort?: string }) => {
         const qs = new URLSearchParams();
         if (params?.search) qs.set("search", params.search);
         if (params?.category) qs.set("category", params.category);
-        if (params?.low_stock) qs.set("low_stock", "true");
+        if (params?.lowStock) qs.set("lowStock", "true");
         if (params?.sort) qs.set("sort", params.sort);
         const q = qs.toString();
         return request<Product[]>(`/products/${q ? `?${q}` : ""}`);
@@ -124,16 +124,16 @@ export const products = {
 
 /* ── Maintenance ── */
 export interface Maintenance {
-    id: string; installation_id: string; scheduled_date: string; completed_date?: string;
-    status: string; maintenance_type: string; description?: string; findings?: string;
-    notification_sent: boolean; created_at: string;
+    id: string; installationId: string; scheduledDate: string; completedDate?: string;
+    status: string; maintenanceType: string; description?: string; findings?: string;
+    notificationSent: boolean; createdAt: string;
 }
 export const maintenance = {
-    list: (params?: { installation_id?: string; status?: string; upcoming_days?: number }) => {
+    list: (params?: { installationId?: string; status?: string; upcomingDays?: number }) => {
         const qs = new URLSearchParams();
-        if (params?.installation_id) qs.set("installation_id", params.installation_id);
+        if (params?.installationId) qs.set("installationId", params.installationId);
         if (params?.status) qs.set("status", params.status);
-        if (params?.upcoming_days) qs.set("upcoming_days", params.upcoming_days.toString());
+        if (params?.upcomingDays) qs.set("upcomingDays", params.upcomingDays.toString());
         const q = qs.toString();
         return request<Maintenance[]>(`/maintenance/${q ? `?${q}` : ""}`);
     },
@@ -143,13 +143,13 @@ export const maintenance = {
 
 /* ── Activities ── */
 export interface Activity {
-    id: string; installation_id: string; user_id?: string; title: string;
-    description?: string; activity_date: string; duration_minutes?: number;
-    created_at: string;
+    id: string; installationId: string; userId?: string; title: string;
+    description?: string; activityDate: string; durationMinutes?: number;
+    createdAt: string;
 }
 export const activities = {
-    list: (installation_id?: string) => {
-        const q = installation_id ? `?installation_id=${installation_id}` : "";
+    list: (installationId?: string) => {
+        const q = installationId ? `?installationId=${installationId}` : "";
         return request<Activity[]>(`/activities/${q}`);
     },
     create: (data: Partial<Activity>) => request<Activity>("/activities/", { method: "POST", body: JSON.stringify(data) }),
@@ -157,9 +157,9 @@ export const activities = {
 
 /* ── Tasks ── */
 export interface Task {
-    id: string; installation_id?: string; title: string; description?: string;
-    priority: string; status: string; assigned_to?: string; due_date?: string;
-    completed_at?: string; created_at: string;
+    id: string; installationId?: string; title: string; description?: string;
+    priority: string; status: string; assigned_to?: string; dueDate?: string;
+    completedAt?: string; createdAt: string;
 }
 export const tasks = {
     list: (params?: { status?: string; priority?: string }) => {
@@ -177,7 +177,7 @@ export const tasks = {
 export interface DashboardStats {
     total_clients: number; total_installations: number; active_installations: number;
     total_power_kw: number; upcoming_maintenance: number; pending_tasks: number;
-    low_stock_products: number;
+    lowStock_products: number;
 }
 export const dashboard = {
     stats: () => request<DashboardStats>("/dashboard/stats"),
@@ -198,11 +198,11 @@ export const agent = {
 
 /* ── Problems ── */
 export interface Solution {
-    id: string; problem_id: string; description: string; created_at: string;
+    id: string; problem_id: string; description: string; createdAt: string;
 }
 export interface Problem {
     id: string; title: string; description: string; status: string; tags: string[];
-    created_at: string; updated_at: string; solutions: Solution[];
+    createdAt: string; updatedAt: string; solutions: Solution[];
 }
 
 export const problems = {
@@ -222,10 +222,10 @@ export const problems = {
 /* ── Team ── */
 export interface TeamMember {
     id: string;
-    full_name: string;
+    fullName: string;
     email: string;
     role: string;
-    is_active: boolean;
+    isActive: boolean;
 }
 export const team = {
     list: () => request<TeamMember[]>("/team/"),
@@ -234,20 +234,20 @@ export const team = {
 /* ── Costs ── */
 export interface Cost {
     id: string;
-    company_id: string;
-    installation_id: string;
+    companyId: string;
+    installationId: string;
     cost_type: string;
     description?: string;
     amount: number;
     quantity: number;
     cost_date: string;
     created_by?: string;
-    created_at: string;
+    createdAt: string;
 }
 
 export const costs = {
-    list: (installation_id: string) => request<Cost[]>(`/costs/?installation_id=${installation_id}`),
-    create: (data: Omit<Cost, "id" | "company_id" | "created_by" | "created_at">) =>
+    list: (installationId: string) => request<Cost[]>(`/costs/?installationId=${installationId}`),
+    create: (data: Omit<Cost, "id" | "companyId" | "created_by" | "createdAt">) =>
         request<Cost>("/costs/", { method: "POST", body: JSON.stringify(data) }),
     delete: (id: string) => request<void>(`/costs/${id}`, { method: "DELETE" }),
 };
@@ -257,95 +257,95 @@ export const costs = {
 export interface BudgetItem {
     id: string;
     budget_id: string;
-    product_id?: string;
+    productId?: string;
     description: string;
     quantity: number;
-    unit_price: number;
+    unitPrice: number;
     total: number;
-    sort_order: number;
+    sortOrder: number;
 }
 
 export interface Budget {
     id: string;
-    company_id: string;
-    client_id?: string;
-    installation_id?: string;
+    companyId: string;
+    clientId?: string;
+    installationId?: string;
     budget_number?: string;
     title: string;
     description?: string;
     subtotal: number;
-    tax_rate: number;
+    taxRate: number;
     tax_amount: number;
     total: number;
     status: "draft" | "sent" | "approved" | "rejected";
-    valid_until?: string;
+    validUntil?: string;
     notes?: string;
     items: BudgetItem[];
     created_by?: string;
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface BudgetListItem {
     id: string;
-    company_id: string;
-    client_id?: string;
-    installation_id?: string;
+    companyId: string;
+    clientId?: string;
+    installationId?: string;
     budget_number?: string;
     title: string;
     subtotal: number;
-    tax_rate: number;
+    taxRate: number;
     tax_amount: number;
     total: number;
     status: "draft" | "sent" | "approved" | "rejected";
-    valid_until?: string;
+    validUntil?: string;
     client_name?: string;
     installation_name?: string;
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export const budgets = {
-    list: (params?: { status?: string; client_id?: string; installation_id?: string; search?: string }) => {
+    list: (params?: { status?: string; clientId?: string; installationId?: string; search?: string }) => {
         const qs = new URLSearchParams();
         if (params?.status) qs.set("status", params.status);
-        if (params?.client_id) qs.set("client_id", params.client_id);
-        if (params?.installation_id) qs.set("installation_id", params.installation_id);
+        if (params?.clientId) qs.set("clientId", params.clientId);
+        if (params?.installationId) qs.set("installationId", params.installationId);
         if (params?.search) qs.set("search", params.search);
         const q = qs.toString();
         return request<BudgetListItem[]>(`/budgets/${q ? `?${q}` : ""}`);
     },
     get: (id: string) => request<Budget>(`/budgets/${id}`),
     create: (data: {
-        client_id?: string;
-        installation_id?: string;
+        clientId?: string;
+        installationId?: string;
         title: string;
         description?: string;
-        tax_rate?: number;
-        valid_until?: string;
+        taxRate?: number;
+        validUntil?: string;
         notes?: string;
         items: Array<{
-            product_id?: string;
+            productId?: string;
             description: string;
             quantity: number;
-            unit_price: number;
-            sort_order?: number;
+            unitPrice: number;
+            sortOrder?: number;
         }>;
     }) => request<Budget>("/budgets/", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: {
-        client_id?: string;
-        installation_id?: string;
+        clientId?: string;
+        installationId?: string;
         title?: string;
         description?: string;
-        tax_rate?: number;
-        valid_until?: string;
+        taxRate?: number;
+        validUntil?: string;
         notes?: string;
         items?: Array<{
-            product_id?: string;
+            productId?: string;
             description: string;
             quantity: number;
-            unit_price: number;
-            sort_order?: number;
+            unitPrice: number;
+            sortOrder?: number;
         }>;
     }) => request<Budget>(`/budgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     delete: (id: string) => request<void>(`/budgets/${id}`, { method: "DELETE" }),
@@ -380,19 +380,19 @@ export interface UsageDetail {
 
 export interface PlanUsage {
     plan: string;
-    ai_questions: UsageDetail;
+    aiQuestions: UsageDetail;
     clients: UsageDetail;
     installations: UsageDetail;
-    team_members: UsageDetail;
+    teamMembers: UsageDetail;
 }
 
 export interface CompanyAdmin {
     id: string;
     name: string;
     plan: string;
-    subscription_status: string;
-    user_count: number;
-    created_at: string;
+    subscriptionStatus: string;
+    userCount: number;
+    createdAt: string;
 }
 
 export const plan = {
@@ -402,14 +402,14 @@ export const plan = {
 /* ── Telegram ── */
 export interface TelegramLinkCode {
     code: string;
-    expires_minutes: number;
-    bot_username: string;
+    expiresMinutes: number;
+    botUsername: string;
 }
 
 export interface TelegramStatus {
     linked: boolean;
-    telegram_username?: string;
-    linked_at?: string;
+    telegramUsername?: string;
+    linkedAt?: string;
 }
 
 export const telegram = {
@@ -425,5 +425,5 @@ export const admin = {
             method: "PUT",
             body: JSON.stringify({ plan: newPlan }),
         }),
-    stats: () => request<{ total_companies: number; total_users: number; demo_count: number; pro_count: number }>("/admin/stats"),
+    stats: () => request<{ totalCompanies: number; totalUsers: number; demoCount: number; proCount: number }>("/admin/stats"),
 };

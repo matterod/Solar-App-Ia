@@ -48,12 +48,12 @@ export default function InstallationDetailLayout({ children, params }: LayoutPro
             <Breadcrumb
               items={[
                 { label: 'Instalaciones', href: '/dashboard/installations' },
-                { label: installation?.location_name ?? 'Detalle' },
+                { label: installation?.locationName ?? 'Detalle' },
               ]}
             />
             <div className="mt-2 flex items-center gap-3">
               <h1 className="text-xl font-semibold text-slate-50">
-                {installation?.location_name ?? '—'}
+                {installation?.locationName ?? '—'}
               </h1>
               {installation?.status && (
                 <Badge status={installation.status as any}>
@@ -72,13 +72,13 @@ export default function InstallationDetailLayout({ children, params }: LayoutPro
               <div>
                 <p className="text-xs text-slate-400">Potencia</p>
                 <p className="text-sm font-semibold text-sky-400">
-                  {installation.system_power_kw ?? '—'} kW
+                  {installation.systemPowerKw ?? '—'} kW
                 </p>
               </div>
               <div>
                 <p className="text-xs text-slate-400">Paneles</p>
                 <p className="text-sm font-semibold text-slate-200">
-                  {installation.panel_count ?? '—'}
+                  {installation.panelCount ?? '—'}
                 </p>
               </div>
             </div>

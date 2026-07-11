@@ -27,9 +27,9 @@ const EMPTY_FORM = {
   description: "",
   category: "",
   unit: "unidades",
-  current_stock: "0",
-  min_stock: "0",
-  unit_cost: "",
+  currentStock: "0",
+  minStock: "0",
+  unitCost: "",
 };
 
 type FormState = typeof EMPTY_FORM;
@@ -39,7 +39,7 @@ export default function InventoryPage() {
 
   // URL-driven filter state
   const [search, setSearch] = useURLState<string>("search", "");
-  const [showLowStock, setShowLowStock] = useURLState<boolean>("low_stock", false);
+  const [showLowStock, setShowLowStock] = useURLState<boolean>("lowStock", false);
   const [sort, setSort] = useURLState<string>("sort", "name");
 
   // Modal state
@@ -49,12 +49,12 @@ export default function InventoryPage() {
 
   const filters = {
     search: search || undefined,
-    low_stock: showLowStock || undefined,
+    lowStock: showLowStock || undefined,
     sort: sort || undefined,
   };
 
   const { data = [], isLoading } = useQuery({
-    queryKey: queryKeys.inventory.list({ search: search || undefined, low_stock: showLowStock || undefined, sort: sort || undefined }),
+    queryKey: queryKeys.inventory.list({ search: search || undefined, lowStock: showLowStock || undefined, sort: sort || undefined }),
     queryFn: () => products.list(filters),
     staleTime: 1000 * 60 * 2,
   });
@@ -97,9 +97,9 @@ export default function InventoryPage() {
       description: product.description ?? "",
       category: product.category ?? "",
       unit: product.unit,
-      current_stock: String(product.current_stock),
-      min_stock: String(product.min_stock),
-      unit_cost: product.unit_cost != null ? String(product.unit_cost) : "",
+      currentStock: String(product.currentStock),
+      minStock: String(product.minStock),
+      unitCost: product.unitCost != null ? String(product.unitCost) : "",
     });
     setIsFormOpen(true);
   };
@@ -108,9 +108,9 @@ export default function InventoryPage() {
     e.preventDefault();
     const payload: Partial<Product> = {
       ...form,
-      current_stock: parseFloat(form.current_stock) || 0,
-      min_stock: parseFloat(form.min_stock) || 0,
-      unit_cost: form.unit_cost ? parseFloat(form.unit_cost) : undefined,
+      currentStock: parseFloat(form.currentStock) || 0,
+      minStock: parseFloat(form.minStock) || 0,
+      unitCost: form.unitCost ? parseFloat(form.unitCost) : undefined,
     };
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, data: payload });
@@ -127,7 +127,7 @@ export default function InventoryPage() {
         <div className="flex items-center gap-3">
           <div
             className={`w-2 h-2 rounded-full shrink-0 ${
-              p.current_stock <= p.min_stock ? "bg-orange-500" : "bg-emerald-500"
+              p.currentStock <= p.minStock ? "bg-orange-500" : "bg-emerald-500"
             }`}
           />
           <p className="font-semibold text-slate-100">{p.name}</p>
@@ -157,35 +157,35 @@ export default function InventoryPage() {
         ),
     },
     {
-      key: "unit_cost" as const,
+      key: "unitCost" as const,
       header: "Precio Unit.",
       render: (p: Product) =>
-        p.unit_cost != null ? (
-          <span className="text-slate-300">${p.unit_cost.toLocaleString()}</span>
+        p.unitCost != null ? (
+          <span className="text-slate-300">${p.unitCost.toLocaleString()}</span>
         ) : (
           <span className="text-slate-500">—</span>
         ),
     },
     {
-      key: "current_stock" as const,
+      key: "currentStock" as const,
       header: "Stock",
       render: (p: Product) => {
-        const isLow = p.current_stock <= p.min_stock;
+        const isLow = p.currentStock <= p.minStock;
         return (
           <div className="flex flex-col items-start gap-1">
             <div className="flex items-baseline gap-1.5">
               {isLow ? (
-                <Badge status="low_stock">
-                  {p.current_stock} {p.unit}
+                <Badge status="lowStock">
+                  {p.currentStock} {p.unit}
                 </Badge>
               ) : (
                 <span className="text-sm font-semibold text-slate-100">
-                  {p.current_stock}{" "}
+                  {p.currentStock}{" "}
                   <span className="text-xs font-normal text-slate-400">{p.unit}</span>
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-slate-500">Mín: {p.min_stock}</span>
+            <span className="text-[11px] text-slate-500">Mín: {p.minStock}</span>
           </div>
         );
       },
@@ -379,8 +379,8 @@ export default function InventoryPage() {
               <input
                 type="number"
                 min="0"
-                value={form.current_stock}
-                onChange={(e) => setForm({ ...form, current_stock: e.target.value })}
+                value={form.currentStock}
+                onChange={(e) => setForm({ ...form, currentStock: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40"
               />
             </div>
@@ -391,8 +391,8 @@ export default function InventoryPage() {
               <input
                 type="number"
                 min="0"
-                value={form.min_stock}
-                onChange={(e) => setForm({ ...form, min_stock: e.target.value })}
+                value={form.minStock}
+                onChange={(e) => setForm({ ...form, minStock: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40"
               />
             </div>
@@ -403,8 +403,8 @@ export default function InventoryPage() {
               <input
                 type="number"
                 step="0.01"
-                value={form.unit_cost}
-                onChange={(e) => setForm({ ...form, unit_cost: e.target.value })}
+                value={form.unitCost}
+                onChange={(e) => setForm({ ...form, unitCost: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40"
               />
             </div>

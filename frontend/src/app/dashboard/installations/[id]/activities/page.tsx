@@ -35,8 +35,8 @@ export default function InstallationActivitiesPage({ params }: PageProps) {
   const [form, setForm] = useState({
     title: '',
     description: '',
-    activity_date: new Date().toISOString().split('T')[0],
-    duration_minutes: '',
+    activityDate: new Date().toISOString().split('T')[0],
+    durationMinutes: '',
   })
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -45,17 +45,17 @@ export default function InstallationActivitiesPage({ params }: PageProps) {
     setSaving(true)
     try {
       await activities.create({
-        installation_id: installation.id,
+        installationId: installation.id,
         title: form.title,
         description: form.description || undefined,
-        activity_date: form.activity_date,
-        duration_minutes: form.duration_minutes ? parseInt(form.duration_minutes) : undefined,
+        activityDate: form.activityDate,
+        durationMinutes: form.durationMinutes ? parseInt(form.durationMinutes) : undefined,
       })
       setForm({
         title: '',
         description: '',
-        activity_date: new Date().toISOString().split('T')[0],
-        duration_minutes: '',
+        activityDate: new Date().toISOString().split('T')[0],
+        durationMinutes: '',
       })
       setShowForm(false)
       queryClient.invalidateQueries({ queryKey: queryKeys.activities.byInstallation(id) })
@@ -101,8 +101,8 @@ export default function InstallationActivitiesPage({ params }: PageProps) {
                 <input
                   type="date"
                   required
-                  value={form.activity_date}
-                  onChange={(e) => setForm({ ...form, activity_date: e.target.value })}
+                  value={form.activityDate}
+                  onChange={(e) => setForm({ ...form, activityDate: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 />
               </div>
@@ -111,8 +111,8 @@ export default function InstallationActivitiesPage({ params }: PageProps) {
                 <input
                   type="number"
                   min="0"
-                  value={form.duration_minutes}
-                  onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
+                  value={form.durationMinutes}
+                  onChange={(e) => setForm({ ...form, durationMinutes: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 />
               </div>
@@ -166,9 +166,9 @@ export default function InstallationActivitiesPage({ params }: PageProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-slate-100">{act.title}</p>
                 <p className="text-xs text-slate-500 mb-2">
-                  {new Date(act.activity_date).toLocaleString('es-AR')}
-                  {act.duration_minutes && (
-                    <span className="ml-2 text-slate-600">· {act.duration_minutes} min</span>
+                  {new Date(act.activityDate).toLocaleString('es-AR')}
+                  {act.durationMinutes && (
+                    <span className="ml-2 text-slate-600">· {act.durationMinutes} min</span>
                   )}
                 </p>
                 {act.description && (

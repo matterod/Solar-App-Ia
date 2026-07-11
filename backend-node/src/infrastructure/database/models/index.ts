@@ -34,7 +34,7 @@ ProductModel.hasMany(StockMovementModel, { foreignKey: 'productId', as: 'stockMo
 StockMovementModel.belongsTo(UserModel, { foreignKey: 'createdBy', as: 'creator' });
 
 // Company <-> Client (1:N)
-ClientModel.belongsTo(CompanyModel, { foreignKey: 'companyId', as: 'company' });
+ClientModel.belongsTo(CompanyModel, { foreignKey: 'companyId', as: 'owningCompany' });
 CompanyModel.hasMany(ClientModel, { foreignKey: 'companyId', as: 'clients' });
 
 // User <-> Client (Created by)

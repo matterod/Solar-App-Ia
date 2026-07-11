@@ -14,8 +14,10 @@ if (!getApps().length) {
       credential: cert(serviceAccountPath),
     });
   } catch (error) {
-    // Fallback: use default credentials (e.g. GOOGLE_APPLICATION_CREDENTIALS)
-    initializeApp();
+    // Fallback: use project ID to verify tokens without full credentials
+    initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID || 'solarsystem-2186e'
+    });
   }
 }
 
@@ -98,16 +100,22 @@ export const getCurrentUser = async (req: Request, res: Response, next: NextFunc
       return res.status(400).json({ detail: 'Inactive user' });
     }
 
-    // Attach user to request in the exact shape FastAPI returned
+    // Attach user to request in the exact shape the frontend expects (camelCase)
+    // while also keeping snake_case for backward compatibility with backend controllers.
     req.current_user = {
       id: user.id,
       email: user.email,
+      fullName: user.fullName,
       full_name: user.fullName,
       role: user.role,
+      companyId: user.companyId,
       company_id: user.companyId,
+      companyName: (user as any).company?.name || null,
       company_name: (user as any).company?.name || null,
       plan: (user as any).company?.plan || null,
+      isSuperadmin: user.isSuperadmin,
       is_superadmin: user.isSuperadmin,
+      aiQuestionsUsed: user.messageCount,
       ai_questions_used: user.messageCount,
     };
 

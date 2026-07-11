@@ -78,7 +78,7 @@ export default function Sidebar() {
                         );
                     })}
 
-                    {dbUser?.is_superadmin && (
+                    {dbUser?.isSuperadmin && (
                         <li>
                             <Link
                                 href="/dashboard/admin"

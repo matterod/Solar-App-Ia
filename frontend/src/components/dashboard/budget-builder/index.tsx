@@ -17,20 +17,20 @@ import { handleApiError } from "@/lib/handle-api-error";
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface ItemForm {
-  product_id?: string;
+  productId?: string;
   description: string;
   quantity: string;
-  unit_price: string;
-  sort_order: number;
+  unitPrice: string;
+  sortOrder: number;
 }
 
 interface BudgetForm {
-  client_id: string;
-  installation_id: string;
+  clientId: string;
+  installationId: string;
   title: string;
   description: string;
-  tax_rate: string;
-  valid_until: string;
+  taxRate: string;
+  validUntil: string;
   notes: string;
   items: ItemForm[];
 }
@@ -48,38 +48,38 @@ function formatCurrency(value: number | undefined | null): string {
 const emptyItem = (): ItemForm => ({
   description: "",
   quantity: "1",
-  unit_price: "0",
-  sort_order: 0,
+  unitPrice: "0",
+  sortOrder: 0,
 });
 
 const emptyForm = (): BudgetForm => ({
-  client_id: "",
-  installation_id: "",
+  clientId: "",
+  installationId: "",
   title: "",
   description: "",
-  tax_rate: "21",
-  valid_until: "",
+  taxRate: "21",
+  validUntil: "",
   notes: "",
   items: [emptyItem()],
 });
 
 function budgetToForm(b: Budget): BudgetForm {
   return {
-    client_id: b.client_id || "",
-    installation_id: b.installation_id || "",
+    clientId: b.clientId || "",
+    installationId: b.installationId || "",
     title: b.title,
     description: b.description || "",
-    tax_rate: String(b.tax_rate),
-    valid_until: b.valid_until || "",
+    taxRate: String(b.taxRate),
+    validUntil: b.validUntil || "",
     notes: b.notes || "",
     items:
       b.items.length > 0
         ? b.items.map((it) => ({
-            product_id: it.product_id || undefined,
+            productId: it.productId || undefined,
             description: it.description,
             quantity: String(it.quantity),
-            unit_price: String(it.unit_price),
-            sort_order: it.sort_order,
+            unitPrice: String(it.unitPrice),
+            sortOrder: it.sortOrder,
           }))
         : [emptyItem()],
   };
@@ -87,19 +87,19 @@ function budgetToForm(b: Budget): BudgetForm {
 
 function buildPayload(form: BudgetForm) {
   return {
-    client_id: form.client_id || undefined,
-    installation_id: form.installation_id || undefined,
+    clientId: form.clientId || undefined,
+    installationId: form.installationId || undefined,
     title: form.title,
     description: form.description || undefined,
-    tax_rate: parseFloat(form.tax_rate) || 21,
-    valid_until: form.valid_until || undefined,
+    taxRate: parseFloat(form.taxRate) || 21,
+    validUntil: form.validUntil || undefined,
     notes: form.notes || undefined,
     items: form.items.map((item, i) => ({
-      product_id: item.product_id || undefined,
+      productId: item.productId || undefined,
       description: item.description,
       quantity: parseFloat(item.quantity) || 1,
-      unit_price: parseFloat(item.unit_price) || 0,
-      sort_order: i,
+      unitPrice: parseFloat(item.unitPrice) || 0,
+      sortOrder: i,
     })),
   };
 }
@@ -140,7 +140,7 @@ export function BudgetBuilderForm({
     () =>
       form.items.map((item) => {
         const qty = parseFloat(item.quantity) || 0;
-        const price = parseFloat(item.unit_price) || 0;
+        const price = parseFloat(item.unitPrice) || 0;
         return qty * price;
       }),
     [form.items]
@@ -152,8 +152,8 @@ export function BudgetBuilderForm({
   );
 
   const taxAmount = useMemo(
-    () => subtotal * ((parseFloat(form.tax_rate) || 0) / 100),
-    [subtotal, form.tax_rate]
+    () => subtotal * ((parseFloat(form.taxRate) || 0) / 100),
+    [subtotal, form.taxRate]
   );
 
   const total = subtotal + taxAmount;
@@ -191,7 +191,7 @@ export function BudgetBuilderForm({
   const addItem = () => {
     setForm((prev) => ({
       ...prev,
-      items: [...prev.items, { ...emptyItem(), sort_order: prev.items.length }],
+      items: [...prev.items, { ...emptyItem(), sortOrder: prev.items.length }],
     }));
   };
 
@@ -216,9 +216,9 @@ export function BudgetBuilderForm({
       const items = [...prev.items];
       items[index] = {
         ...items[index],
-        product_id: product.id,
+        productId: product.id,
         description: product.name,
-        unit_price: String(product.sale_price ?? product.unit_cost ?? 0),
+        unitPrice: String(product.salePrice ?? product.unitCost ?? 0),
       };
       return { ...prev, items };
     });
@@ -277,9 +277,9 @@ export function BudgetBuilderForm({
               Cliente
             </label>
             <select
-              value={form.client_id}
+              value={form.clientId}
               onChange={(e) =>
-                setForm((prev) => ({ ...prev, client_id: e.target.value }))
+                setForm((prev) => ({ ...prev, clientId: e.target.value }))
               }
               className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
             >
@@ -297,16 +297,16 @@ export function BudgetBuilderForm({
               <span className="text-slate-400">(opcional)</span>
             </label>
             <select
-              value={form.installation_id}
+              value={form.installationId}
               onChange={(e) =>
-                setForm((prev) => ({ ...prev, installation_id: e.target.value }))
+                setForm((prev) => ({ ...prev, installationId: e.target.value }))
               }
               className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
             >
               <option value="">Sin instalación</option>
               {installations.map((inst) => (
                 <option key={inst.id} value={inst.id}>
-                  {inst.location_name}
+                  {inst.locationName}
                 </option>
               ))}
             </select>
@@ -318,9 +318,9 @@ export function BudgetBuilderForm({
             <input
               type="number"
               step="0.01"
-              value={form.tax_rate}
+              value={form.taxRate}
               onChange={(e) =>
-                setForm((prev) => ({ ...prev, tax_rate: e.target.value }))
+                setForm((prev) => ({ ...prev, taxRate: e.target.value }))
               }
               className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
             />
@@ -331,9 +331,9 @@ export function BudgetBuilderForm({
             </label>
             <input
               type="date"
-              value={form.valid_until}
+              value={form.validUntil}
               onChange={(e) =>
-                setForm((prev) => ({ ...prev, valid_until: e.target.value }))
+                setForm((prev) => ({ ...prev, validUntil: e.target.value }))
               }
               className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
             />
@@ -435,10 +435,10 @@ export function BudgetBuilderForm({
                               {p.name}
                             </span>
                             <span className="text-slate-400">
-                              {p.sale_price
-                                ? formatCurrency(p.sale_price)
-                                : p.unit_cost
-                                ? formatCurrency(p.unit_cost)
+                              {p.salePrice
+                                ? formatCurrency(p.salePrice)
+                                : p.unitCost
+                                ? formatCurrency(p.unitCost)
                                 : "Sin precio"}
                             </span>
                           </button>
@@ -490,8 +490,8 @@ export function BudgetBuilderForm({
                     type="number"
                     min="0"
                     step="0.01"
-                    value={item.unit_price}
-                    onChange={(e) => updateItem(idx, "unit_price", e.target.value)}
+                    value={item.unitPrice}
+                    onChange={(e) => updateItem(idx, "unitPrice", e.target.value)}
                     className="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs bg-white text-right focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400"
                   />
                 </div>
@@ -518,7 +518,7 @@ export function BudgetBuilderForm({
           </span>
         </div>
         <div className="flex justify-between px-4 py-3 text-sm border-t border-slate-100">
-          <span className="text-slate-500">IVA ({form.tax_rate || 0}%)</span>
+          <span className="text-slate-500">IVA ({form.taxRate || 0}%)</span>
           <span className="font-semibold text-slate-700">
             {formatCurrency(taxAmount)}
           </span>

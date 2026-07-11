@@ -208,7 +208,7 @@ export default function ProblemsPage() {
                                             </span>
                                         </div>
                                         <p className="text-slate-400 text-sm whitespace-pre-wrap">{p.description}</p>
-                                        <p className="text-xs text-slate-400 mt-3 font-mono">Reportado: {new Date(p.created_at).toLocaleDateString('es-AR')}</p>
+                                        <p className="text-xs text-slate-400 mt-3 font-mono">Reportado: {new Date(p.createdAt).toLocaleDateString('es-AR')}</p>
                                     </div>
 
                                     {!isResolved && (
@@ -231,7 +231,7 @@ export default function ProblemsPage() {
                                         {p.solutions.map(sol => (
                                             <div key={sol.id} className="bg-slate-900 border border-white/10 rounded-xl p-4 shadow-sm">
                                                 <p className="text-slate-300 text-sm whitespace-pre-wrap">{sol.description}</p>
-                                                <p className="text-xs text-slate-400 mt-2 font-mono">Aplicada: {new Date(sol.created_at).toLocaleDateString('es-AR')}</p>
+                                                <p className="text-xs text-slate-400 mt-2 font-mono">Aplicada: {new Date(sol.createdAt).toLocaleDateString('es-AR')}</p>
                                             </div>
                                         ))}
                                     </div>

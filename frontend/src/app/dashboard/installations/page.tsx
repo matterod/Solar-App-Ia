@@ -30,9 +30,9 @@ export default function InstallationsPage() {
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    client_id: '', location_name: '', address: '', city: '', province: '',
-    panel_count: '0', panel_model: '', inverter_model: '', inverter_count: '1',
-    system_power_kw: '', installation_date: '', status: 'pending', description: '',
+    clientId: '', locationName: '', address: '', city: '', province: '',
+    panelCount: '0', panelModel: '', inverterModel: '', inverterCount: '1',
+    systemPowerKw: '', installationDate: '', status: 'pending', description: '',
   })
 
   const filters = {
@@ -63,16 +63,16 @@ export default function InstallationsPage() {
     try {
       await installations.create({
         ...form,
-        panel_count: parseInt(form.panel_count) || 0,
-        inverter_count: parseInt(form.inverter_count) || 1,
-        system_power_kw: form.system_power_kw ? parseFloat(form.system_power_kw) : undefined,
-        installation_date: form.installation_date || undefined,
+        panelCount: parseInt(form.panelCount) || 0,
+        inverterCount: parseInt(form.inverterCount) || 1,
+        systemPowerKw: form.systemPowerKw ? parseFloat(form.systemPowerKw) : undefined,
+        installationDate: form.installationDate || undefined,
       })
       setShowModal(false)
       setForm({
-        client_id: '', location_name: '', address: '', city: '', province: '',
-        panel_count: '0', panel_model: '', inverter_model: '', inverter_count: '1',
-        system_power_kw: '', installation_date: '', status: 'pending', description: '',
+        clientId: '', locationName: '', address: '', city: '', province: '',
+        panelCount: '0', panelModel: '', inverterModel: '', inverterCount: '1',
+        systemPowerKw: '', installationDate: '', status: 'pending', description: '',
       })
       queryClient.invalidateQueries({ queryKey: queryKeys.installations.all() })
     } catch (err) {
@@ -154,7 +154,7 @@ export default function InstallationsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {(data as Installation[]).map((inst: Installation, i: number) => {
-            const clientInfo = (clientList as Client[]).find((c: Client) => c.id === inst.client_id)
+            const clientInfo = (clientList as Client[]).find((c: Client) => c.id === inst.clientId)
             return (
               <motion.div
                 key={inst.id}
@@ -165,7 +165,7 @@ export default function InstallationsPage() {
               >
                 <div>
                   <div className="flex items-start justify-between mb-1">
-                    <h3 className="font-semibold text-slate-100">{inst.location_name}</h3>
+                    <h3 className="font-semibold text-slate-100">{inst.locationName}</h3>
                     <Badge status={inst.status as any}>
                       {statusMap[inst.status] ?? inst.status}
                     </Badge>
@@ -181,13 +181,13 @@ export default function InstallationsPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-slate-500 pt-3 border-t border-white/5">
-                  <span className="bg-slate-800/60 px-2 py-1 rounded">{inst.panel_count} paneles</span>
-                  {inst.system_power_kw && (
-                    <span className="bg-slate-800/60 px-2 py-1 rounded">{inst.system_power_kw} kW</span>
+                  <span className="bg-slate-800/60 px-2 py-1 rounded">{inst.panelCount} paneles</span>
+                  {inst.systemPowerKw && (
+                    <span className="bg-slate-800/60 px-2 py-1 rounded">{inst.systemPowerKw} kW</span>
                   )}
-                  {inst.installation_date && (
+                  {inst.installationDate && (
                     <span className="bg-slate-800/60 px-2 py-1 rounded">
-                      {new Date(inst.installation_date).toLocaleDateString('es-AR')}
+                      {new Date(inst.installationDate).toLocaleDateString('es-AR')}
                     </span>
                   )}
                 </div>
@@ -234,8 +234,8 @@ export default function InstallationsPage() {
                     <label className="block text-sm font-medium text-slate-300 mb-1">Cliente *</label>
                     <select
                       required
-                      value={form.client_id}
-                      onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                      value={form.clientId}
+                      onChange={(e) => setForm({ ...form, clientId: e.target.value })}
                       className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                     >
                       <option value="">Seleccionar cliente</option>
@@ -249,8 +249,8 @@ export default function InstallationsPage() {
                       <label className="block text-sm font-medium text-slate-300 mb-1">Ubicación *</label>
                       <input
                         required
-                        value={form.location_name}
-                        onChange={(e) => setForm({ ...form, location_name: e.target.value })}
+                        value={form.locationName}
+                        onChange={(e) => setForm({ ...form, locationName: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                       />
                     </div>
@@ -284,8 +284,8 @@ export default function InstallationsPage() {
                       <input
                         type="number"
                         min="0"
-                        value={form.panel_count}
-                        onChange={(e) => setForm({ ...form, panel_count: e.target.value })}
+                        value={form.panelCount}
+                        onChange={(e) => setForm({ ...form, panelCount: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                       />
                     </div>
@@ -294,24 +294,24 @@ export default function InstallationsPage() {
                       <input
                         type="number"
                         step="0.1"
-                        value={form.system_power_kw}
-                        onChange={(e) => setForm({ ...form, system_power_kw: e.target.value })}
+                        value={form.systemPowerKw}
+                        onChange={(e) => setForm({ ...form, systemPowerKw: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">Modelo Panel</label>
                       <input
-                        value={form.panel_model}
-                        onChange={(e) => setForm({ ...form, panel_model: e.target.value })}
+                        value={form.panelModel}
+                        onChange={(e) => setForm({ ...form, panelModel: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-300 mb-1">Modelo Inversor</label>
                       <input
-                        value={form.inverter_model}
-                        onChange={(e) => setForm({ ...form, inverter_model: e.target.value })}
+                        value={form.inverterModel}
+                        onChange={(e) => setForm({ ...form, inverterModel: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                       />
                     </div>
@@ -319,8 +319,8 @@ export default function InstallationsPage() {
                       <label className="block text-sm font-medium text-slate-300 mb-1">Fecha Instalación</label>
                       <input
                         type="date"
-                        value={form.installation_date}
-                        onChange={(e) => setForm({ ...form, installation_date: e.target.value })}
+                        value={form.installationDate}
+                        onChange={(e) => setForm({ ...form, installationDate: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
                       />
                     </div>

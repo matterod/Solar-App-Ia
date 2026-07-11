@@ -12,8 +12,8 @@ export default function ActivitiesPage() {
     const queryClient = useQueryClient();
     const [tab, setTab] = useState<"activities" | "tasks">("activities");
     const [showModal, setShowModal] = useState<"activity" | "task" | null>(null);
-    const [actForm, setActForm] = useState({ installation_id: "", title: "", description: "", duration_minutes: "" });
-    const [taskForm, setTaskForm] = useState({ title: "", description: "", priority: "medium", due_date: "", installation_id: "" });
+    const [actForm, setActForm] = useState({ installationId: "", title: "", description: "", durationMinutes: "" });
+    const [taskForm, setTaskForm] = useState({ title: "", description: "", priority: "medium", dueDate: "", installationId: "" });
 
     const { data: actData = [], isLoading: loadingAct } = useQuery({
         queryKey: queryKeys.activities.all(),
@@ -38,7 +38,7 @@ export default function ActivitiesPage() {
             toast.success("Actividad registrada correctamente");
             queryClient.invalidateQueries({ queryKey: queryKeys.activities.all() });
             setShowModal(null);
-            setActForm({ installation_id: "", title: "", description: "", duration_minutes: "" });
+            setActForm({ installationId: "", title: "", description: "", durationMinutes: "" });
         },
         onError: (e) => handleApiError(e),
     });
@@ -49,7 +49,7 @@ export default function ActivitiesPage() {
             toast.success("Tarea creada correctamente");
             queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all() });
             setShowModal(null);
-            setTaskForm({ title: "", description: "", priority: "medium", due_date: "", installation_id: "" });
+            setTaskForm({ title: "", description: "", priority: "medium", dueDate: "", installationId: "" });
         },
         onError: (e) => handleApiError(e),
     });
@@ -66,8 +66,8 @@ export default function ActivitiesPage() {
         e.preventDefault();
         createActivityMutation.mutate({
             ...actForm,
-            duration_minutes: actForm.duration_minutes ? parseInt(actForm.duration_minutes) : undefined,
-            installation_id: actForm.installation_id || undefined,
+            durationMinutes: actForm.durationMinutes ? parseInt(actForm.durationMinutes) : undefined,
+            installationId: actForm.installationId || undefined,
         });
     };
 
@@ -75,8 +75,8 @@ export default function ActivitiesPage() {
         e.preventDefault();
         createTaskMutation.mutate({
             ...taskForm,
-            installation_id: taskForm.installation_id || undefined,
-            due_date: taskForm.due_date || undefined,
+            installationId: taskForm.installationId || undefined,
+            dueDate: taskForm.dueDate || undefined,
         });
     };
 
@@ -127,17 +127,17 @@ export default function ActivitiesPage() {
                 ) : (
                     <div className="space-y-3">
                         {actData.map((a, i) => {
-                            const instName = instList.find(inst => inst.id === a.installation_id)?.location_name || "Instalación";
+                            const instName = instList.find(inst => inst.id === a.installationId)?.locationName || "Instalación";
                             return (
                                 <motion.div key={a.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                                     className="bg-slate-900 rounded-2xl p-5 border border-white/10 hover:shadow-md transition-all">
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <h3 className="font-semibold text-slate-100">{a.title}</h3>
-                                            <p className="text-sm text-slate-500 mt-0.5">📍 {instName} · 📅 {new Date(a.activity_date).toLocaleDateString("es-AR")}</p>
+                                            <p className="text-sm text-slate-500 mt-0.5">📍 {instName} · 📅 {new Date(a.activityDate).toLocaleDateString("es-AR")}</p>
                                             {a.description && <p className="text-sm text-slate-500 mt-1">{a.description}</p>}
                                         </div>
-                                        {a.duration_minutes && <span className="text-xs text-slate-400 bg-slate-50 rounded-lg px-2 py-1">{a.duration_minutes} min</span>}
+                                        {a.durationMinutes && <span className="text-xs text-slate-400 bg-slate-50 rounded-lg px-2 py-1">{a.durationMinutes} min</span>}
                                     </div>
                                 </motion.div>
                             );
@@ -163,7 +163,7 @@ export default function ActivitiesPage() {
                                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${priorityColors[t.priority] || "bg-slate-800 text-slate-400"}`}>{t.priority === "high" ? "Alta" : t.priority === "medium" ? "Media" : "Baja"}</span>
                                         </div>
                                         {t.description && <p className="text-sm text-slate-500">{t.description}</p>}
-                                        {t.due_date && <p className="text-xs text-slate-400 mt-1">Vence: {new Date(t.due_date).toLocaleDateString("es-AR")}</p>}
+                                        {t.dueDate && <p className="text-xs text-slate-400 mt-1">Vence: {new Date(t.dueDate).toLocaleDateString("es-AR")}</p>}
                                     </div>
                                     {t.status !== "completed" && (
                                         <button onClick={() => handleCompleteTask(t.id)} className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition-colors whitespace-nowrap">
@@ -188,9 +188,9 @@ export default function ActivitiesPage() {
                                 <form onSubmit={handleCreateActivity} className="p-6 space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">Instalación *</label>
-                                        <select required value={actForm.installation_id} onChange={(e) => setActForm({ ...actForm, installation_id: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
+                                        <select required value={actForm.installationId} onChange={(e) => setActForm({ ...actForm, installationId: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
                                             <option value="">Seleccionar</option>
-                                            {instList.map(i => <option key={i.id} value={i.id}>{i.location_name}</option>)}
+                                            {instList.map(i => <option key={i.id} value={i.id}>{i.locationName}</option>)}
                                         </select>
                                     </div>
                                     <div>
@@ -203,7 +203,7 @@ export default function ActivitiesPage() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">Duración (minutos)</label>
-                                        <input type="number" min="0" value={actForm.duration_minutes} onChange={(e) => setActForm({ ...actForm, duration_minutes: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                                        <input type="number" min="0" value={actForm.durationMinutes} onChange={(e) => setActForm({ ...actForm, durationMinutes: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-2">
                                         <button type="button" onClick={() => setShowModal(null)} className="px-4 py-2 rounded-lg border border-white/10 text-sm text-slate-400 hover:bg-slate-800">Cancelar</button>
@@ -244,15 +244,15 @@ export default function ActivitiesPage() {
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-slate-300 mb-1">Vencimiento</label>
-                                            <input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                                            <input type="date" value={taskForm.dueDate} onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
                                         </div>
                                     </div>
                                     {instList.length > 0 && (
                                         <div>
                                             <label className="block text-sm font-medium text-slate-300 mb-1">Instalación (opcional)</label>
-                                            <select value={taskForm.installation_id} onChange={(e) => setTaskForm({ ...taskForm, installation_id: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
+                                            <select value={taskForm.installationId} onChange={(e) => setTaskForm({ ...taskForm, installationId: e.target.value })} className="w-full px-3 py-2.5 rounded-lg border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20">
                                                 <option value="">Ninguna</option>
-                                                {instList.map(i => <option key={i.id} value={i.id}>{i.location_name}</option>)}
+                                                {instList.map(i => <option key={i.id} value={i.id}>{i.locationName}</option>)}
                                             </select>
                                         </div>
                                     )}

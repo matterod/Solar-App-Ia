@@ -117,23 +117,23 @@ export default function DashboardPage() {
       ),
     },
     {
-      key: 'created_at',
+      key: 'createdAt',
       header: 'Alta',
-      render: (row: { created_at: string }) => (
-        <span className="text-slate-500">{formatDate(row.created_at)}</span>
+      render: (row: { createdAt: string }) => (
+        <span className="text-slate-500">{formatDate(row.createdAt)}</span>
       ),
     },
   ]
 
   const installationColumns = [
     {
-      key: 'location_name',
+      key: 'locationName',
       header: 'Instalación',
-      render: (row: { location_name: string; system_power_kw?: number }) => (
+      render: (row: { locationName: string; systemPowerKw?: number }) => (
         <div>
-          <p className="font-medium text-slate-200">{row.location_name}</p>
-          {row.system_power_kw != null && (
-            <p className="text-xs text-slate-500">{row.system_power_kw} kW</p>
+          <p className="font-medium text-slate-200">{row.locationName}</p>
+          {row.systemPowerKw != null && (
+            <p className="text-xs text-slate-500">{row.systemPowerKw} kW</p>
           )}
         </div>
       ),
@@ -148,11 +148,11 @@ export default function DashboardPage() {
       ),
     },
     {
-      key: 'installation_date',
+      key: 'installationDate',
       header: 'Fecha',
-      render: (row: { installation_date?: string }) => (
+      render: (row: { installationDate?: string }) => (
         <span className="text-slate-500">
-          {row.installation_date ? formatDate(row.installation_date) : '—'}
+          {row.installationDate ? formatDate(row.installationDate) : '—'}
         </span>
       ),
     },
@@ -181,10 +181,10 @@ export default function DashboardPage() {
       ),
     },
     {
-      key: 'due_date',
+      key: 'dueDate',
       header: 'Vence',
-      render: (row: { due_date?: string }) => (
-        <span className="text-slate-500">{row.due_date ? formatDate(row.due_date) : '—'}</span>
+      render: (row: { dueDate?: string }) => (
+        <span className="text-slate-500">{row.dueDate ? formatDate(row.dueDate) : '—'}</span>
       ),
     },
   ]
@@ -265,10 +265,10 @@ export default function DashboardPage() {
             />
             <MetricCard
               title="Stock bajo"
-              value={stats?.low_stock_products ?? 0}
+              value={stats?.lowStock_products ?? 0}
               subtitle="Productos bajo mínimo"
               icon={Package}
-              variant={stats?.low_stock_products ? 'danger' : 'default'}
+              variant={stats?.lowStock_products ? 'danger' : 'default'}
             />
           </>
         )}

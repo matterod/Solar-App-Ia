@@ -19,7 +19,7 @@ export class InstallationController {
       const filters = {
         status: req.query.status as string,
         search: req.query.search as string,
-        clientId: req.query.client_id as string,
+        clientId: req.query.clientId as string,
       };
 
       const installations = await this.listInstallationsUseCase.execute(companyId, filters, skip, limit);

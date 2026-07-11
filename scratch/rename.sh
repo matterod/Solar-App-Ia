@@ -1,0 +1,57 @@
+#!/bin/bash
+find frontend/src -type f -name "*.ts" -o -name "*.tsx" | xargs sed -i '' \
+  -e 's/company_id/companyId/g' \
+  -e 's/company_name/companyName/g' \
+  -e 's/client_id/clientId/g' \
+  -e 's/installation_id/installationId/g' \
+  -e 's/created_at/createdAt/g' \
+  -e 's/updated_at/updatedAt/g' \
+  -e 's/tax_id/taxId/g' \
+  -e 's/location_name/locationName/g' \
+  -e 's/panel_count/panelCount/g' \
+  -e 's/panel_model/panelModel/g' \
+  -e 's/inverter_model/inverterModel/g' \
+  -e 's/inverter_count/inverterCount/g' \
+  -e 's/system_power_kw/systemPowerKw/g' \
+  -e 's/installation_date/installationDate/g' \
+  -e 's/current_stock/currentStock/g' \
+  -e 's/min_stock/minStock/g' \
+  -e 's/unit_cost/unitCost/g' \
+  -e 's/sale_price/salePrice/g' \
+  -e 's/is_active/isActive/g' \
+  -e 's/scheduled_date/scheduledDate/g' \
+  -e 's/completed_date/completedDate/g' \
+  -e 's/maintenance_type/maintenanceType/g' \
+  -e 's/notification_sent/notificationSent/g' \
+  -e 's/user_id/userId/g' \
+  -e 's/activity_date/activityDate/g' \
+  -e 's/duration_minutes/durationMinutes/g' \
+  -e 's/full_name/fullName/g' \
+  -e 's/maintenance_records/maintenanceRecords/g' \
+  -e 's/low_stock/lowStock/g' \
+  -e 's/upcoming_days/upcomingDays/g' \
+  -e 's/product_id/productId/g' \
+  -e 's/unit_price/unitPrice/g' \
+  -e 's/sort_order/sortOrder/g' \
+  -e 's/tax_rate/taxRate/g' \
+  -e 's/valid_until/validUntil/g' \
+  -e 's/is_superadmin/isSuperadmin/g' \
+  -e 's/ai_questions_used/aiQuestionsUsed/g' \
+  -e 's/ai_questions/aiQuestions/g' \
+  -e 's/team_members/teamMembers/g' \
+  -e 's/subscription_status/subscriptionStatus/g' \
+  -e 's/user_count/userCount/g' \
+  -e 's/expires_minutes/expiresMinutes/g' \
+  -e 's/bot_username/botUsername/g' \
+  -e 's/telegram_username/telegramUsername/g' \
+  -e 's/linked_at/linkedAt/g' \
+  -e 's/total_companies/totalCompanies/g' \
+  -e 's/total_users/totalUsers/g' \
+  -e 's/demo_count/demoCount/g' \
+  -e 's/pro_count/proCount/g' \
+  -e 's/due_date/dueDate/g' \
+  -e 's/completed_at/completedAt/g' \
+  -e 's/task_type/taskType/g' \
+  -e 's/is_recurring/isRecurring/g'
+
+echo "Done renaming"

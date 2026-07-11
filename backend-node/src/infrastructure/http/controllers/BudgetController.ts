@@ -29,8 +29,8 @@ export class BudgetController {
 
       const filters = {
         status: req.query.status as string,
-        clientId: req.query.client_id as string,
-        installationId: req.query.installation_id as string,
+        clientId: req.query.clientId as string,
+        installationId: req.query.installationId as string,
         search: req.query.search as string,
       };
 

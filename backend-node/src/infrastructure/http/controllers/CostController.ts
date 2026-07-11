@@ -12,8 +12,8 @@ export class CostController {
 
   async listCosts(req: Request, res: Response) {
     try {
-      if (!req.query.installation_id) {
-        return res.status(400).json({ detail: 'installation_id is required' });
+      if (!req.query.installationId) {
+        return res.status(400).json({ detail: 'installationId query param is required' });
       }
 
       const skip = parseInt(req.query.skip as string) || 0;
@@ -21,7 +21,7 @@ export class CostController {
       const companyId = req.current_user.company_id;
 
       const filters = {
-        installationId: req.query.installation_id as string,
+        installationId: req.query.installationId as string,
       };
 
       const costs = await this.listCostsUseCase.execute(companyId, filters, skip, limit);

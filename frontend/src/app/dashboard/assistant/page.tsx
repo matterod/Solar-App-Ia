@@ -197,7 +197,7 @@ export default function AssistantPage() {
 
 
 
-    const limitReached = usage && usage.plan === 'demo' && usage.ai_questions.limit !== null && usage.ai_questions.used >= usage.ai_questions.limit;
+    const limitReached = usage && usage.plan === 'demo' && usage.aiQuestions.limit !== null && usage.aiQuestions.used >= usage.aiQuestions.limit;
 
     // ── Chat Screen ──
     return (
@@ -339,7 +339,7 @@ export default function AssistantPage() {
             <div className="shrink-0 p-2.5 sm:px-4 border-t border-white/10 bg-slate-900/70 backdrop-blur-md h-[78px] flex flex-col justify-center relative">
                 {usage && usage.plan === 'demo' && (
                     <div className="absolute -top-7 left-4 text-[10px] text-slate-500 bg-slate-900/80 px-2 py-0.5 rounded-full border border-white/10">
-                        {usage.ai_questions.used} / {usage.ai_questions.limit} consultas usadas
+                        {usage.aiQuestions.used} / {usage.aiQuestions.limit} consultas usadas
                     </div>
                 )}
                 <form

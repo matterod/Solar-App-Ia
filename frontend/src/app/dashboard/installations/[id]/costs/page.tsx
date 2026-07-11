@@ -55,7 +55,7 @@ export default function InstallationCostsPage({ params }: PageProps) {
     setAddingCost(true)
     try {
       await costs.create({
-        installation_id: installation.id,
+        installationId: installation.id,
         cost_type: costForm.cost_type,
         amount: parseFloat(costForm.amount),
         quantity: parseInt(costForm.quantity) || 1,

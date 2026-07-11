@@ -65,7 +65,7 @@ export default function InvitationBanner() {
                             {/* Text */}
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-slate-900">
-                                    Te han invitado a unirte a <span className="text-sky-700">{inv.company_name}</span>
+                                    Te han invitado a unirte a <span className="text-sky-700">{inv.companyName}</span>
                                 </p>
                                 <p className="text-xs text-slate-500 mt-0.5">
                                     Rol asignado: <span className="capitalize font-medium">{inv.role}</span>

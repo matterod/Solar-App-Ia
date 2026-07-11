@@ -43,7 +43,7 @@ export class SequelizeProductRepository implements IProductRepository {
         { sku: { [Op.iLike]: `%${filters.search}%` } },
       ];
     }
-    if (filters.low_stock) {
+    if (filters.lowStock) {
       whereClause.currentStock = { [Op.lte]: sequelize.col('min_stock') }; // Using col reference to min_stock
     }
 

@@ -16,7 +16,7 @@ export const queryKeys = {
 
   installations: {
     all: () => ["installations"] as const,
-    list: (filters: { search?: string; status?: string; client_id?: string; page?: number }) =>
+    list: (filters: { search?: string; status?: string; clientId?: string; page?: number }) =>
       ["installations", "list", filters] as const,
     detail: (id: string | number) => ["installations", "detail", id] as const,
   },
@@ -35,21 +35,21 @@ export const queryKeys = {
 
   maintenance: {
     all: () => ["maintenance"] as const,
-    list: (filters: { status?: string; installation_id?: string; upcoming_days?: number }) =>
+    list: (filters: { status?: string; installationId?: string; upcomingDays?: number }) =>
       ["maintenance", "list", filters] as const,
     detail: (id: string | number) => ["maintenance", "detail", id] as const,
   },
 
   inventory: {
     all: () => ["inventory"] as const,
-    list: (filters: { search?: string; category?: string; low_stock?: boolean; sort?: string; page?: number }) =>
+    list: (filters: { search?: string; category?: string; lowStock?: boolean; sort?: string; page?: number }) =>
       ["inventory", "list", filters] as const,
     detail: (id: string | number) => ["inventory", "detail", id] as const,
   },
 
   presupuestos: {
     all: () => ["presupuestos"] as const,
-    list: (filters: { search?: string; status?: string; client_id?: string; installation_id?: string; page?: number }) =>
+    list: (filters: { search?: string; status?: string; clientId?: string; installationId?: string; page?: number }) =>
       ["presupuestos", "list", filters] as const,
     detail: (id: string | number) => ["presupuestos", "detail", id] as const,
   },

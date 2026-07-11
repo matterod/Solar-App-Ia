@@ -34,16 +34,16 @@ export default function InstallationDetailPage({ params }: PageProps) {
   const handleEdit = () => {
     if (!installation) return
     setForm({
-      location_name: installation.location_name || '',
+      locationName: installation.locationName || '',
       address: installation.address || '',
       city: installation.city || '',
       province: installation.province || '',
-      panel_count: installation.panel_count || 0,
-      system_power_kw: installation.system_power_kw || '',
-      panel_model: installation.panel_model || '',
-      inverter_model: installation.inverter_model || '',
-      inverter_count: installation.inverter_count || 1,
-      installation_date: installation.installation_date ? installation.installation_date.split('T')[0] : '', // Format for date input
+      panelCount: installation.panelCount || 0,
+      systemPowerKw: installation.systemPowerKw || '',
+      panelModel: installation.panelModel || '',
+      inverterModel: installation.inverterModel || '',
+      inverterCount: installation.inverterCount || 1,
+      installationDate: installation.installationDate ? installation.installationDate.split('T')[0] : '', // Format for date input
       status: installation.status || 'pending',
       description: installation.description || '',
     })
@@ -56,9 +56,9 @@ export default function InstallationDetailPage({ params }: PageProps) {
     try {
       await installations.update(id, {
         ...form,
-        panel_count: parseInt(form.panel_count) || 0,
-        inverter_count: parseInt(form.inverter_count) || 1,
-        system_power_kw: form.system_power_kw ? parseFloat(form.system_power_kw) : null,
+        panelCount: parseInt(form.panelCount) || 0,
+        inverterCount: parseInt(form.inverterCount) || 1,
+        systemPowerKw: form.systemPowerKw ? parseFloat(form.systemPowerKw) : null,
       })
       await queryClient.invalidateQueries({ queryKey: queryKeys.installations.detail(id) })
       await queryClient.invalidateQueries({ queryKey: queryKeys.installations.list({}) })
@@ -104,8 +104,8 @@ export default function InstallationDetailPage({ params }: PageProps) {
               <label className="block text-sm font-medium text-slate-300 mb-1">Ubicación *</label>
               <input
                 required
-                value={form.location_name}
-                onChange={(e) => setForm({ ...form, location_name: e.target.value })}
+                value={form.locationName}
+                onChange={(e) => setForm({ ...form, locationName: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
               />
             </div>
@@ -139,8 +139,8 @@ export default function InstallationDetailPage({ params }: PageProps) {
               <input
                 type="number"
                 min="0"
-                value={form.panel_count}
-                onChange={(e) => setForm({ ...form, panel_count: e.target.value })}
+                value={form.panelCount}
+                onChange={(e) => setForm({ ...form, panelCount: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
               />
             </div>
@@ -149,24 +149,24 @@ export default function InstallationDetailPage({ params }: PageProps) {
               <input
                 type="number"
                 step="0.1"
-                value={form.system_power_kw}
-                onChange={(e) => setForm({ ...form, system_power_kw: e.target.value })}
+                value={form.systemPowerKw}
+                onChange={(e) => setForm({ ...form, systemPowerKw: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Modelo Panel</label>
               <input
-                value={form.panel_model}
-                onChange={(e) => setForm({ ...form, panel_model: e.target.value })}
+                value={form.panelModel}
+                onChange={(e) => setForm({ ...form, panelModel: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Modelo Inversor</label>
               <input
-                value={form.inverter_model}
-                onChange={(e) => setForm({ ...form, inverter_model: e.target.value })}
+                value={form.inverterModel}
+                onChange={(e) => setForm({ ...form, inverterModel: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
               />
             </div>
@@ -174,8 +174,8 @@ export default function InstallationDetailPage({ params }: PageProps) {
               <label className="block text-sm font-medium text-slate-300 mb-1">Fecha Instalación</label>
               <input
                 type="date"
-                value={form.installation_date}
-                onChange={(e) => setForm({ ...form, installation_date: e.target.value })}
+                value={form.installationDate}
+                onChange={(e) => setForm({ ...form, installationDate: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-slate-800/60 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500/40"
               />
             </div>
@@ -241,27 +241,27 @@ export default function InstallationDetailPage({ params }: PageProps) {
           <div>
             <p className="text-xs text-slate-500 mb-0.5">Potencia Instalada</p>
             <p className="text-sm font-semibold text-slate-100">
-              {installation.system_power_kw ? `${installation.system_power_kw} kWp` : '—'}
+              {installation.systemPowerKw ? `${installation.systemPowerKw} kWp` : '—'}
             </p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-0.5">Fecha de Instalación</p>
             <p className="text-sm font-semibold text-slate-100">
-              {installation.installation_date
-                ? new Date(installation.installation_date).toLocaleDateString('es-AR')
+              {installation.installationDate
+                ? new Date(installation.installationDate).toLocaleDateString('es-AR')
                 : 'Pendiente'}
             </p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-0.5">Paneles Solares</p>
             <p className="text-sm font-semibold text-slate-100">
-              {installation.panel_count}x {installation.panel_model || 'Genérico'}
+              {installation.panelCount}x {installation.panelModel || 'Genérico'}
             </p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-0.5">Inversor</p>
             <p className="text-sm font-semibold text-slate-100">
-              {installation.inverter_count}x {installation.inverter_model || 'Genérico'}
+              {installation.inverterCount}x {installation.inverterModel || 'Genérico'}
             </p>
           </div>
           <div>
@@ -275,7 +275,7 @@ export default function InstallationDetailPage({ params }: PageProps) {
           <div>
             <p className="text-xs text-slate-500 mb-0.5">Fecha de alta</p>
             <p className="text-sm font-semibold text-slate-100">
-              {new Date(installation.created_at).toLocaleDateString('es-AR')}
+              {new Date(installation.createdAt).toLocaleDateString('es-AR')}
             </p>
           </div>
         </div>

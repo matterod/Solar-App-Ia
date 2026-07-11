@@ -17,7 +17,7 @@ export class ActivityController {
       const companyId = req.current_user.company_id;
 
       const filters = {
-        installationId: req.query.installation_id as string,
+        installationId: req.query.installationId as string,
       };
 
       const activities = await this.listActivitiesUseCase.execute(companyId, filters, skip, limit);
